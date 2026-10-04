@@ -9,7 +9,10 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "db:setup": "tsx scripts/db-setup.ts",
-    "admin:recover": "tsx scripts/admin-recover.ts"
+    "admin:recover": "tsx scripts/admin-recover.ts",
+    "db:seed": "tsx scripts/seed/index.ts",
+    "db:seed:reset": "tsx scripts/seed/index.ts --reset",
+    "dev:setup": "npm run db:setup && npm run db:seed"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

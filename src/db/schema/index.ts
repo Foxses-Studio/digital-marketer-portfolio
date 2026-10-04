@@ -1,6 +1,7 @@
 import { mediaIndexes, type MediaDocument } from "./media";
 import { pagesIndexes, type PageDocument } from "./pages";
 import { rateLimitsIndexes, type RateLimitDocument } from "./rate-limits";
+import { seedLedgerIndexes, type SeedLedgerDocument } from "./seed-ledger";
 import { sessionsIndexes, type SessionDocument } from "./sessions";
 import { settingsIndexes, type SettingsDocument } from "./settings";
 import type { CollectionIndexes } from "./types";
@@ -24,6 +25,7 @@ export type Collections = {
   settings: SettingsDocument;
   media: MediaDocument;
   pages: PageDocument;
+  seedLedger: SeedLedgerDocument;
 };
 
 export const collectionIndexes: Record<keyof Collections, CollectionIndexes> = {
@@ -33,12 +35,14 @@ export const collectionIndexes: Record<keyof Collections, CollectionIndexes> = {
   settings: settingsIndexes,
   media: mediaIndexes,
   pages: pagesIndexes,
+  seedLedger: seedLedgerIndexes,
 };
 
 export type {
   MediaDocument,
   PageDocument,
   RateLimitDocument,
+  SeedLedgerDocument,
   SessionDocument,
   SettingsDocument,
   UserDocument,

@@ -2,6 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { ObjectId } from "mongodb";
 import { cacheLife, cacheTag } from "next/cache";
+import type { z } from "zod";
 import { PAGE_DEFINITIONS, type PageKey } from "@/config/pages";
 import { collection } from "@/db";
 import type { PageDocument, SectionInstance } from "@/db/schema";
@@ -26,23 +27,29 @@ export type PublicPage = {
 };
 
 /**
- * Validates stored section data against its definition. Unknown types are
- * dropped; invalid content falls back to defaults so a bad edit can never
- * break the page layout.
+ * Parses stored data, resetting only the fields that fail validation (to
+ * their defaults) so one bad value never blanks a whole section.
  */
+function parseRepairing(schema: z.ZodType<Record<string, unknown>>, value: unknown, label: string) {
+  const parsed = schema.safeParse(value);
+  if (parsed.success) return parsed.data;
+  const stored = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
+  const broken = new Set(parsed.error.issues.map((issue) => String(issue.path[0])));
+  console.error(`${label} has invalid fields (${[...broken].join(", ")}); using defaults for those.`);
+  const retry = schema.safeParse(Object.fromEntries(Object.entries(stored).filter(([key]) => !broken.has(key))));
+  return retry.success ? retry.data : schema.parse({});
+}
+
+/** Validates stored section data; unknown section types are dropped. */
 function resolveSection(section: SectionInstance): ResolvedSection | null {
   const definition = getSectionDefinition(section.type);
   if (!definition) return null;
-  const content = definition.content.safeParse(section.content);
-  const config = definition.config.safeParse(section.config);
-  if (!content.success || !config.success) {
-    console.error(`Section ${section.type}:${section.id} has invalid data; using defaults.`);
-  }
+  const label = `Section ${section.type}:${section.id}`;
   return {
     id: section.id,
     type: section.type,
-    content: content.success ? content.data : definition.content.parse({}),
-    config: config.success ? config.data : definition.config.parse({}),
+    content: parseRepairing(definition.content, section.content, label),
+    config: parseRepairing(definition.config, section.config, label),
   };
 }
 

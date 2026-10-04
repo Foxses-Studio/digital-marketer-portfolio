@@ -10,6 +10,7 @@ import { linkUrlSchema, mediaIdSchema } from "@/validation/cms";
 
 export const HERO_METRIC_LIMIT = 4;
 export const HERO_CHANNEL_LIMIT = 4;
+export const HERO_CHART_MAX_POINTS = 12;
 
 const text = (max: number) =>
   z.string().trim().max(max, `Keep this under ${max} characters.`).default("");
@@ -69,6 +70,30 @@ export const heroContentSchema = z
       .default({ enabled: false, text: "" }),
     /** Small caption on the performance visual, e.g. "Campaign performance". */
     visualLabel: text(40),
+    /**
+     * The performance graph. Values are plotted in order (e.g. monthly
+     * revenue); growth is calculated from the first and last value.
+     * Without values the graph shows a neutral illustrative curve.
+     */
+    chart: z
+      .object({
+        label: text(40),
+        startLabel: text(12),
+        endLabel: text(12),
+        points: z
+          .array(z.number().finite().min(0, "Values can't be negative.").max(1e12))
+          .max(HERO_CHART_MAX_POINTS, `Up to ${HERO_CHART_MAX_POINTS} values.`)
+          .default([]),
+      })
+      .superRefine((chart, ctx) => {
+        if (chart.points.length === 1) {
+          ctx.addIssue({ code: "custom", path: ["points"], message: "Add at least 2 values, or none." });
+        }
+        if (chart.points.length > 1 && chart.points[0] === 0) {
+          ctx.addIssue({ code: "custom", path: ["points"], message: "The first value must be above 0 to calculate growth." });
+        }
+      })
+      .default({ label: "", startLabel: "", endLabel: "", points: [] }),
     /** Channel names shown on the visual, e.g. "Google Ads". */
     channels: z
       .array(z.string().trim().min(1, "Enter a channel name.").max(20, "Keep channel names under 20 characters."))

@@ -3,10 +3,10 @@ import { cacheLife, cacheTag } from "next/cache";
 import { cacheTags } from "@/lib/cms/cache-tags";
 import { getSettings } from "@/lib/cms/settings";
 import { findMediaByIds } from "@/lib/media/service";
-import { cn } from "@/lib/utils/cn";
 import { SmartLink } from "@/sections/header/smart-link";
 import type { HeroContent } from "./definition";
 import { HeroMotion } from "./hero-motion";
+import { chartGeometry, growthParts } from "./chart-geometry";
 import { HeroLedgerMobile, HeroVisual } from "./hero-visual";
 import "./hero.css";
 
@@ -62,6 +62,16 @@ export async function HeroSection({ content }: { content: HeroContent }) {
   const primary = content.primaryCta.enabled ? content.primaryCta : null;
   const secondary = content.secondaryCta.enabled ? content.secondaryCta : null;
   const availability = content.availability.enabled ? content.availability.text : "";
+  const geometry = chartGeometry(content.chart.points);
+  // Phones show results as a grid under the visual: the featured result
+  // when there's a portrait, otherwise the graph's growth (on larger
+  // screens these sit in the foreground plate).
+  const period = [content.chart.startLabel, content.chart.endLabel].filter(Boolean).join("–");
+  const plateItem = image
+    ? null
+    : geometry.growth !== null
+      ? { id: "growth", label: period ? `Growth · ${period}` : "Growth", ...growthParts(geometry.growth) }
+      : null;
 
   return (
     <HeroMotion>
@@ -159,17 +169,28 @@ export async function HeroSection({ content }: { content: HeroContent }) {
           </div>
 
           {/* Marketing performance visual */}
-          <div className={cn("relative min-w-0", !featured && "pb-6")}>
+          <div className="relative min-w-0">
             <HeroVisual
               image={image}
               imageAlt={content.imageAlt || name}
               monogram={initials(name)}
-              label={content.visualLabel}
+              caption={content.visualLabel}
               channels={content.channels}
               featured={featured}
               ledger={ledger}
+              chart={{
+                label: content.chart.label,
+                startLabel: content.chart.startLabel,
+                endLabel: content.chart.endLabel,
+                geometry,
+              }}
             />
-            <HeroLedgerMobile ledger={ledger} />
+            <HeroLedgerMobile
+              ledger={[
+                ...(image && featured ? [{ ...featured, phoneOnly: true }] : plateItem ? [{ ...plateItem, phoneOnly: true }] : []),
+                ...ledger,
+              ]}
+            />
           </div>
         </div>
       </section>

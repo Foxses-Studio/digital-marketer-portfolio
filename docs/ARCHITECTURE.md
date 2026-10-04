@@ -30,6 +30,7 @@ cannot be changed from the admin.
 
 ```
 scripts/                   CLI: db-setup, admin-recover
+  seed/                    Development demo content (see "Development seed")
 src/
   app/
     layout.tsx             Root: fonts, theme script, metadata from settings
@@ -249,7 +250,8 @@ rejected instead of overwritten, and a no-op is never reported as saved.
 Content (`src/sections/hero/definition.ts`): label, heading, highlighted
 phrase (must appear in the heading), description, primary/secondary CTA
 (enabled, label, URL), image + alt text, availability (enabled, text),
-chart caption, up to 4 channel names, up to 4 results
+chart caption, performance graph (label, start/end labels, 2–12 values;
+growth is calculated from first to last), up to 4 channel names, up to 4 results
 (`label, prefix, value, suffix, enabled`; array order, first is featured).
 Metric values are numeric strings formatted and animated by
 `src/lib/metrics.ts`. Empty heading/label fall back to the professional
@@ -258,8 +260,12 @@ name/title from Settings; no invented copy.
 Design: asymmetric editorial layout; the heading's type scale steps down
 with its length so any text holds its shape; the highlight uses the
 editorial serif (Instrument Serif italic, `--font-serif`). The visual is
-a layered composition: data plane (caption, results ledger, campaign
-curve), portrait anchor (monogram fallback), featured result in front.
+a layered composition: an anchor on the left (portrait, or without one a
+dark performance panel with the featured result and the graph as bars),
+a data plane behind it on the right (caption, channels, results ledger,
+the CMS graph with its latest point visible), and a foreground plate
+(featured result with a portrait, graph growth without one). On phones
+the plate's figure moves into the results grid under the visual.
 
 Markup is server-rendered (readable without JavaScript, one H1);
 `HeroMotion` adds three independent systems on separate wrappers:
@@ -323,12 +329,35 @@ a static hero with final values.
 - Secrets only in server env vars; nothing sensitive uses `NEXT_PUBLIC_`.
 - Not yet: Content Security Policy (needs nonces for the theme script).
 
+## Development seed
+
+`scripts/seed/` loads realistic demo content into the real collections so
+the site can be reviewed complete while it's being built. Rules:
+
+- Demo content lives in `scripts/seed/demo-content.ts` (fixed ids), one
+  module per area in `scripts/seed/modules/`, registered in
+  `scripts/seed/index.ts`. Values are parsed with the same Zod schemas as
+  the admin, so seeded and admin-saved data are identical in shape.
+- `seedLedger` records a fingerprint per unit. A re-run creates missing
+  units, updates untouched ones, keeps edited ones, doesn't resurrect
+  deleted ones, and never touches content it didn't create. `--reset`
+  restores seeded units; `--dry-run` writes nothing.
+- Dev-only `POST /api/dev/revalidate` (404 outside `next dev` / localhost)
+  lets the seed refresh cached reads in a running dev server.
+- The dashboard shows a notice while seeded content exists.
+- Rule for every new section: add its demo content and seed module in the
+  same change, so the section can be evaluated fully populated.
+
+Stored section and settings data that fails validation is repaired field
+by field (only invalid fields fall back to defaults), so one bad value
+never blanks a section.
+
 ## Local development
 
 ```bash
 cp .env.example .env.local      # set MONGODB_URI
 npm install
-npm run db:setup                # optional: checks connection, creates indexes
+npm run dev:setup               # indexes + demo content
 npm run dev                     # open /admin/login to create the Super Admin
 ```
 

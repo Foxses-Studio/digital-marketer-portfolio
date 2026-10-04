@@ -13,7 +13,9 @@ import { confirmDelete, showError, toast } from "@/lib/feedback/alerts";
 import type { MediaItem } from "@/lib/media/types";
 import { formatMetric, METRIC_VALUE_PATTERN } from "@/lib/metrics";
 import { cn } from "@/lib/utils/cn";
+import { chartGeometry, growthParts } from "@/sections/hero/chart-geometry";
 import {
+  HERO_CHART_MAX_POINTS,
   HERO_CHANNEL_LIMIT,
   HERO_METRIC_LIMIT,
   heroContentSchema,
@@ -56,6 +58,7 @@ export function HeroEditor({
   const [dirty, setDirty] = useState(false);
   const [version, setVersion] = useState(0);
   const [pending, startTransition] = useTransition();
+  const [pointsText, setPointsText] = useState(initial.chart.points.join(", "));
 
   function update<K extends keyof HeroContent>(key: K, value: HeroContent[K]) {
     setContent((current) => ({ ...current, [key]: value }));
@@ -85,8 +88,21 @@ export function HeroEditor({
     ]);
   }
 
+  /** "142, 151.5, 160" → numbers; null if any entry isn't a number. */
+  function parsePoints(text: string): number[] | null {
+    const parts = text.split(/[,\s]+/).filter(Boolean);
+    const numbers = parts.map((part) => Number(part));
+    return numbers.every((n) => Number.isFinite(n)) ? numbers : null;
+  }
+
   function save() {
-    const parsed = heroContentSchema.safeParse(content);
+    const points = parsePoints(pointsText);
+    if (!points) {
+      setErrors({ "chart.points": ["Use numbers separated by commas, e.g. 120, 135, 160."] });
+      void toast("Check the highlighted fields.", "error");
+      return;
+    }
+    const parsed = heroContentSchema.safeParse({ ...content, chart: { ...content.chart, points } });
     if (!parsed.success) {
       setErrors(collectErrors(parsed.error.issues));
       void toast("Check the highlighted fields.", "error");
@@ -247,7 +263,34 @@ export function HeroEditor({
             </div>
           </FormSection>
 
-          <FormSection stacked title="Performance visual" description="Small captions on the chart beside your image.">
+          <FormSection stacked title="Performance graph" description="Plotted in order, for example monthly revenue. Growth is calculated from the first and last value.">
+            <TextField label="Graph label" value={content.chart.label} onChange={(ev) => update("chart", { ...content.chart, label: ev.target.value })} maxLength={40} errors={e("chart.label")} placeholder="e.g. Monthly revenue" />
+            <div className="grid grid-cols-2 gap-4">
+              <TextField label="Start label" value={content.chart.startLabel} onChange={(ev) => update("chart", { ...content.chart, startLabel: ev.target.value })} maxLength={12} errors={e("chart.startLabel")} placeholder="e.g. Jan" />
+              <TextField label="End label" value={content.chart.endLabel} onChange={(ev) => update("chart", { ...content.chart, endLabel: ev.target.value })} maxLength={12} errors={e("chart.endLabel")} placeholder="e.g. Dec" />
+            </div>
+            <TextField
+              label="Values"
+              value={pointsText}
+              onChange={(ev) => {
+                setPointsText(ev.target.value);
+                setDirty(true);
+              }}
+              inputMode="decimal"
+              errors={e("chart.points")}
+              placeholder="e.g. 120, 135, 128, 160, 190"
+              hint={(() => {
+                const points = parsePoints(pointsText);
+                if (!points || points.length < 2) return `2 to ${HERO_CHART_MAX_POINTS} values, separated by commas. Leave empty for a neutral curve.`;
+                const growth = chartGeometry(points).growth;
+                if (growth === null) return `${points.length} values`;
+                const parts = growthParts(growth);
+                return `${points.length} values · growth ${parts.prefix}${parts.value}%`;
+              })()}
+            />
+          </FormSection>
+
+          <FormSection stacked title="Performance visual" description="Small captions on the graph.">
             <TextField label="Chart caption" value={content.visualLabel} onChange={(ev) => update("visualLabel", ev.target.value)} maxLength={40} errors={e("visualLabel")} placeholder="e.g. Campaign performance" />
             <ChannelsField
               channels={content.channels}

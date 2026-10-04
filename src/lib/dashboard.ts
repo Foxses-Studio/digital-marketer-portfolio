@@ -25,3 +25,9 @@ export async function getDashboardCounts(): Promise<DashboardCounts> {
   );
   return Object.fromEntries(entries) as DashboardCounts;
 }
+
+/** Number of content units created by the development seed. */
+export async function countSeededUnits() {
+  const db = await getDb();
+  return db.collection("seedLedger").countDocuments();
+}

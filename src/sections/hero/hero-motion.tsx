@@ -100,11 +100,18 @@ export function HeroMotion({ children }: { children: ReactNode }) {
             at(0.75),
           )
           .from(q("[data-chart-area]"), { autoAlpha: 0, duration: 1.2, ease: "sine.out" }, at(1.5))
-          // Points pop as the line reaches them.
+          // Latest-value guide appears as the line arrives.
           .from(
             q("[data-chart-dot]"),
-            { scale: 0, transformOrigin: "50% 50%", duration: 0.55, ease: "back.out(2.4)", stagger: 0.36 },
-            at(1.5),
+            { autoAlpha: 0, duration: 0.6, ease: "sine.out" },
+            at(2.1),
+          )
+          .from(q("[data-chart-end]"), { scale: 0, autoAlpha: 0, duration: 0.6, ease: "back.out(3)" }, at(2.15))
+          // Panel bars rise left to right, the latest one last.
+          .from(
+            q("[data-bar]"),
+            { scaleY: 0, duration: 1.1, ease: "dm.reveal", stagger: { each: 0.05, from: "start" } },
+            at(0.7),
           )
           .from(q('[data-reveal="plate"]'), { y: 48, autoAlpha: 0, duration: 1.2, ease: "dm.reveal" }, at(0.95))
           .from(q("[data-plate-bar]"), { scaleX: 0, duration: 1.4, ease: "dm.inOut" }, at(1.35))

@@ -49,6 +49,13 @@
   --color-accent-2: light-dark(#1d6a50, #5cc79f);
   --color-accent-2-subtle: light-dark(#e0efe8, #12241d);
 
+  /* Feature panel: a dark, art-directed surface used for emphasis (e.g.
+     the hero performance panel). Stays dark in both themes, a step above
+     the canvas in dark mode. */
+  --color-feature: light-dark(#151514, #1b1b1e);
+  --color-feature-fg: light-dark(#f4f2ec, #f1f0ec);
+  --color-feature-muted: light-dark(#9a978e, #8d8b84);
+
   /* Buttons. Primary is ink-on-canvas for a restrained, editorial feel;
      the accent is reserved for emphasis rather than every CTA. */
   --color-button-primary: light-dark(#131313, #f1f0ec);
