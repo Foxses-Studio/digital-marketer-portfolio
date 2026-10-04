@@ -1,0 +1,88 @@
+/*
+ * Typography and layout utilities. Every heading, paragraph, label and
+ * button across the site uses one of these instead of ad-hoc font sizes,
+ * so sections stay consistent. Sizes are fluid between mobile and desktop.
+ */
+
+@utility text-display {
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 1.55rem + 5vw, 6.25rem);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+@utility text-h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 1.5rem + 3.1vw, 4.25rem);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+@utility text-h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 1.3rem + 1.9vw, 3rem);
+  line-height: 1.1;
+  letter-spacing: -0.028em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+@utility text-h3 {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.625rem);
+  line-height: 1.25;
+  letter-spacing: -0.018em;
+  font-weight: 600;
+}
+
+@utility text-body-lg {
+  font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  line-height: 1.6;
+  letter-spacing: -0.006em;
+  text-wrap: pretty;
+}
+
+@utility text-body {
+  font-size: 1rem;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+@utility text-small {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Eyebrows, metadata and metric captions. */
+@utility text-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+@utility text-button {
+  font-size: 0.9375rem;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  font-weight: 500;
+}
+
+/* Page-width container with responsive gutters. */
+@utility container-page {
+  width: 100%;
+  max-width: calc(var(--page-max-width) + var(--page-gutter) * 2);
+  margin-inline: auto;
+  padding-inline: var(--page-gutter);
+}
+
+/* Vertical rhythm between public site sections. */
+@utility section-space {
+  padding-block: var(--section-space);
+}
