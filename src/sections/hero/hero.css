@@ -1,0 +1,91 @@
+/*
+ * Hero typography and motion gating. Values here are design decisions for
+ * this section; colors come from the design tokens.
+ */
+
+/* Display heading. Size steps down with longer CMS headings so the shape
+   holds for any text; line-height and tracking tighten as it grows. */
+.hero-heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  text-wrap: balance;
+  font-size: clamp(2.75rem, 1.35rem + 4.4vw, 5.75rem);
+  line-height: 0.97;
+  letter-spacing: -0.048em;
+  max-width: 11.5ch;
+}
+
+.hero-heading[data-size="medium"] {
+  font-size: clamp(2.4rem, 1.3rem + 3.4vw, 4.75rem);
+  line-height: 1;
+  letter-spacing: -0.042em;
+  max-width: 14ch;
+}
+
+.hero-heading[data-size="long"] {
+  font-size: clamp(2.1rem, 1.25rem + 2.5vw, 3.75rem);
+  line-height: 1.04;
+  letter-spacing: -0.034em;
+  max-width: 18ch;
+}
+
+/* Emphasis: editorial italic serif in the accent color. */
+.hero-highlight {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.06em;
+  letter-spacing: -0.02em;
+  color: var(--color-accent);
+  padding-right: 0.04em;
+}
+
+/* SplitText line masks: room for descenders and the italic overhang so the
+   reveal never clips glyphs. */
+.hero-heading .hero-line-mask {
+  padding-block: 0.06em;
+  margin-block: -0.06em;
+  padding-inline-end: 0.12em;
+  margin-inline-end: -0.12em;
+}
+
+/* Availability status: a calm, slow pulse. */
+.hero-status::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  border: 1px solid var(--color-accent-2);
+  opacity: 0;
+  animation: hero-status 2.8s var(--ease-out-quart) infinite;
+}
+
+@keyframes hero-status {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.7;
+  }
+  70%,
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+/*
+ * Before the motion layer starts, animated parts stay hidden so they never
+ * flash in their final state. Only when scripts run and motion is allowed;
+ * a failsafe reveals everything if JavaScript is slow or fails.
+ */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  [data-hero]:not([data-motion="ready"]) :is([data-reveal], [data-reveal-fade], [data-ledger-row]) {
+    visibility: hidden;
+    animation: hero-failsafe 0s linear 2.5s forwards;
+  }
+}
+
+@keyframes hero-failsafe {
+  to {
+    visibility: visible;
+  }
+}

@@ -78,6 +78,7 @@
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
 
   /* --------------------------------------------------------------- radius */
 
@@ -105,6 +106,8 @@
 
   /* Layout tokens (consumed by the layout utilities in typography.css). */
   --page-max-width: 82rem;
+  /* Header and hero use a slightly wider frame on large screens. */
+  --page-max-width-wide: 90rem;
   --page-gutter: clamp(1.25rem, 0.75rem + 2.5vw, 3rem);
   --section-space: clamp(4.5rem, 3rem + 6vw, 9rem);
   --header-height: 4.75rem;

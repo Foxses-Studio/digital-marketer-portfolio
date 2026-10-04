@@ -1,29 +1,16 @@
+import { heroSection } from "@/sections/hero/definition";
 import type { AnySectionDefinition } from "./define";
 
 /**
- * Every section type the application provides. Sections are added here as
- * they are designed and built, for example (not built yet):
- *
- *   export const heroSection = defineSection({
- *     type: "hero",
- *     label: "Hero",
- *     content: z.object({
- *       eyebrow: z.string().max(60).default(""),
- *       heading: z.string().max(120).default(""),
- *       highlightedText: z.string().max(60).default(""),
- *       description: z.string().max(400).default(""),
- *       primaryCta: ctaSchema.default({ label: "", url: "" }),
- *       secondaryCta: ctaSchema.default({ label: "", url: "" }),
- *       imageMediaId: mediaIdSchema.nullable().default(null),
- *       availability: z.string().max(80).default(""),
- *     }),
- *     config: z.object({}),
- *   });
- *
- * then registered below and listed on a page in src/config/pages.ts.
- * The public component lives in src/sections/<type>/.
+ * Every section type the application provides. To add one: create
+ * src/sections/<type>/definition.ts with `defineSection(...)` (content and
+ * config schemas, every field with a default), register it here, list it on
+ * a page in src/config/pages.ts, and add its component to the public
+ * renderer and its editor to the admin editor map.
  */
-export const sectionRegistry: Record<string, AnySectionDefinition> = {};
+export const sectionRegistry: Record<string, AnySectionDefinition> = {
+  [heroSection.type]: heroSection as unknown as AnySectionDefinition,
+};
 
 export function getSectionDefinition(type: string): AnySectionDefinition | undefined {
   return Object.hasOwn(sectionRegistry, type) ? sectionRegistry[type] : undefined;

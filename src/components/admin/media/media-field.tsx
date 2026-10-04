@@ -21,6 +21,7 @@ export function MediaField({
   errors,
   preview = "wide",
   tone = "light",
+  onChange,
 }: {
   name: string;
   label: string;
@@ -31,8 +32,14 @@ export function MediaField({
   preview?: "wide" | "square";
   /** Dark preview background, e.g. for a dark-mode logo. */
   tone?: "light" | "dark";
+  /** Notified when the selection changes (for state-driven editors). */
+  onChange?: (item: MediaItem | null) => void;
 }) {
-  const [selected, setSelected] = useState<MediaItem | null>(initial);
+  const [selected, setSelectedState] = useState<MediaItem | null>(initial);
+  const setSelected = (item: MediaItem | null) => {
+    setSelectedState(item);
+    onChange?.(item);
+  };
   const dialog = useRef<HTMLDialogElement>(null);
   const labelId = useId();
   const invalid = Boolean(errors?.length);

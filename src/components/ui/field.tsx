@@ -136,13 +136,15 @@ export function TextareaField({
   showCount,
   maxLength,
   defaultValue,
+  value,
   onChange,
   ...props
 }: TextareaFieldProps) {
   const generatedId = useId();
   const fieldId = id ?? generatedId;
   const invalid = Boolean(errors?.length);
-  const [count, setCount] = useState(String(defaultValue ?? "").length);
+  const [uncontrolledCount, setCount] = useState(String(defaultValue ?? "").length);
+  const count = value !== undefined ? String(value).length : uncontrolledCount;
   return (
     <FieldShell
       id={fieldId}
@@ -165,6 +167,7 @@ export function TextareaField({
         id={fieldId}
         maxLength={maxLength}
         defaultValue={defaultValue}
+        value={value}
         onChange={(event) => {
           setCount(event.target.value.length);
           onChange?.(event);

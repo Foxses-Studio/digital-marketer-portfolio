@@ -8,10 +8,12 @@ export const motion = {
     base: 0.9,
     slow: 1.4,
   },
+  /** Custom eases registered in ./gsap.ts. */
   ease: {
-    out: "power3.out",
-    outStrong: "expo.out",
-    inOut: "power2.inOut",
+    reveal: "dm.reveal",
+    out: "dm.out",
+    inOut: "dm.inOut",
+    soft: "dm.soft",
   },
   stagger: {
     tight: 0.06,
@@ -29,3 +31,7 @@ export const motionQueries = {
   allowed: "(prefers-reduced-motion: no-preference)",
   reduced: "(prefers-reduced-motion: reduce)",
 } as const;
+
+/** Desktop with a precise pointer: where pointer-driven effects run. */
+export const pointerQuery =
+  "(min-width: 64rem) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)";

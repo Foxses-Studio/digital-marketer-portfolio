@@ -98,7 +98,7 @@ export function HeaderClient({ data }: { data: HeaderData }) {
           aria-hidden
           className="absolute inset-0 border-b border-transparent transition-[background-color,border-color,box-shadow] duration-300 group-data-[scrolled=true]/header:border-line group-data-[scrolled=true]/header:bg-canvas/88 group-data-[scrolled=true]/header:shadow-[0_1px_12px_var(--color-shadow)] group-data-[scrolled=true]/header:backdrop-blur-md"
         />
-        <div className="header-intro container-page relative grid h-[var(--header-height)] grid-cols-[1fr_auto] items-center gap-6 transition-[height] duration-300 ease-out group-data-[scrolled=true]/header:h-[var(--header-height-compact)] lg:grid-cols-[1fr_auto_1fr]">
+        <div className="header-intro container-wide relative grid h-[var(--header-height)] grid-cols-[1fr_auto] items-center gap-6 transition-[height] duration-300 ease-out group-data-[scrolled=true]/header:h-[var(--header-height-compact)] lg:grid-cols-[1fr_auto_1fr]">
           <BrandMark brand={brand} showTitle className="justify-self-start" />
 
           {items.length > 0 && (

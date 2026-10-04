@@ -1,23 +1,32 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils/cn";
 
 /** A titled group of fields inside a settings form. */
 export function FormSection({
   title,
   description,
+  stacked = false,
   children,
 }: {
   title: string;
   description?: string;
+  /** Title above the fields, for narrow columns (e.g. beside a preview). */
+  stacked?: boolean;
   children: ReactNode;
 }) {
   return (
-    <section className="grid gap-6 border-b border-line py-8 first:pt-0 last:border-b-0 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:gap-12">
+    <section
+      className={cn(
+        "grid gap-6 border-b border-line py-8 first:pt-0 last:border-b-0",
+        !stacked && "lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:gap-12",
+      )}
+    >
       <div>
         <h2 className="text-body font-semibold text-fg">{title}</h2>
         {description && <p className="mt-1 text-small text-fg-secondary">{description}</p>}
       </div>
-      <div className="max-w-2xl space-y-5">{children}</div>
+      <div className={cn("space-y-5", stacked ? "max-w-3xl" : "max-w-2xl")}>{children}</div>
     </section>
   );
 }

@@ -54,7 +54,7 @@ export const adminNav: AdminNavGroup[] = [
   {
     label: "Content",
     items: [
-      { href: "/admin/pages", label: "Pages", icon: Layers, permission: "content:manage", description: "Edit the content and visibility of page sections.", planned: true },
+      { href: "/admin/pages", label: "Pages", icon: Layers, permission: "content:manage", description: "Edit the content and visibility of page sections." },
       { href: "/admin/projects", label: "Projects", icon: FolderKanban, permission: "content:manage", description: "Showcase campaigns and client work.", planned: true },
       { href: "/admin/case-studies", label: "Case Studies", icon: FileText, permission: "content:manage", description: "Long-form stories with measurable results.", planned: true },
       { href: "/admin/blog", label: "Blog", icon: BookOpenText, permission: "content:manage", description: "Write and publish articles.", planned: true },

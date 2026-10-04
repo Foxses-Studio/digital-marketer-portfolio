@@ -5,7 +5,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { PAGE_DEFINITIONS, type PageKey } from "@/config/pages";
 import { collection } from "@/db";
 import type { PageDocument, SectionInstance } from "@/db/schema";
-import { NotFoundError, ValidationError } from "@/lib/errors";
+import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 import { fieldErrors } from "@/validation/utils";
 import { cacheTags } from "./cache-tags";
 import { getSectionDefinition } from "./sections/registry";
@@ -54,7 +54,14 @@ export async function getPublicPage(key: PageKey): Promise<PublicPage> {
 
   const pages = await collection("pages");
   const doc = await pages.findOne({ key });
-  const sections = (doc?.sections ?? [])
+  // Sections the page defines but hasn't stored yet render with defaults,
+  // so a fresh install shows the designed page before any editing.
+  const stored = doc?.sections ?? [];
+  const storedTypes = new Set(stored.map((section) => section.type));
+  const missing = PAGE_DEFINITIONS[key].sections
+    .filter((type) => !storedTypes.has(type))
+    .map(newSection);
+  const sections = [...stored, ...missing]
     .filter((section) => section.enabled)
     .map(resolveSection)
     .filter((section): section is ResolvedSection => section !== null);
@@ -105,7 +112,9 @@ export async function getPageForAdmin(key: PageKey): Promise<PageDocument> {
     { upsert: true },
   );
 
-  const doc = (await pages.findOne({ key }))!;
+  const found = (await pages.findOne({ key }))!;
+  // Tolerate documents missing optional fields (older or partial writes).
+  const doc: PageDocument = { ...found, seo: found.seo ?? {}, sections: found.sections ?? [] };
   const existing = new Set(doc.sections.map((section) => section.type));
   const missing = definition.sections.filter((type) => !existing.has(type));
   if (missing.length === 0) return doc;
@@ -115,11 +124,32 @@ export async function getPageForAdmin(key: PageKey): Promise<PageDocument> {
   return { ...doc, sections: [...doc.sections, ...added] };
 }
 
-async function findSection(key: PageKey, sectionId: string) {
+/**
+ * Applies a change to a page's sections and saves the whole list, only if
+ * nobody else saved the page in the meantime (optimistic concurrency on
+ * `updatedAt`). Throws instead of silently doing nothing.
+ */
+async function mutateSections(
+  key: PageKey,
+  updatedBy: string,
+  change: (sections: SectionInstance[]) => SectionInstance[],
+) {
   const page = await getPageForAdmin(key);
-  const section = page.sections.find((s) => s.id === sectionId);
-  if (!section) throw new NotFoundError("That section no longer exists.");
-  return section;
+  const sections = change(structuredClone(page.sections));
+  const pages = await collection("pages");
+  const result = await pages.updateOne(
+    { key, updatedAt: page.updatedAt },
+    { $set: { sections, updatedAt: new Date(), updatedBy: new ObjectId(updatedBy) } },
+  );
+  if (result.matchedCount !== 1) {
+    throw new ConflictError("This page was changed by someone else. Reload and try again.");
+  }
+}
+
+function sectionIndex(sections: SectionInstance[], sectionId: string) {
+  const index = sections.findIndex((section) => section.id === sectionId);
+  if (index === -1) throw new NotFoundError("That section no longer exists.");
+  return index;
 }
 
 /** Validates content/config against the section definition, then saves. */
@@ -129,27 +159,22 @@ export async function updateSection(
   input: { content?: unknown; config?: unknown },
   updatedBy: string,
 ) {
-  const section = await findSection(key, sectionId);
-  const definition = getSectionDefinition(section.type);
-  if (!definition) throw new NotFoundError("This section type is no longer available.");
-
-  const set: Record<string, unknown> = {
-    updatedAt: new Date(),
-    updatedBy: new ObjectId(updatedBy),
-  };
-  if (input.content !== undefined) {
-    const parsed = definition.content.safeParse(input.content);
-    if (!parsed.success) throw new ValidationError(fieldErrors(parsed.error));
-    set["sections.$.content"] = parsed.data;
-  }
-  if (input.config !== undefined) {
-    const parsed = definition.config.safeParse(input.config);
-    if (!parsed.success) throw new ValidationError(fieldErrors(parsed.error));
-    set["sections.$.config"] = parsed.data;
-  }
-
-  const pages = await collection("pages");
-  await pages.updateOne({ key, "sections.id": sectionId }, { $set: set });
+  await mutateSections(key, updatedBy, (sections) => {
+    const section = sections[sectionIndex(sections, sectionId)]!;
+    const definition = getSectionDefinition(section.type);
+    if (!definition) throw new NotFoundError("This section type is no longer available.");
+    if (input.content !== undefined) {
+      const parsed = definition.content.safeParse(input.content);
+      if (!parsed.success) throw new ValidationError(fieldErrors(parsed.error));
+      section.content = parsed.data;
+    }
+    if (input.config !== undefined) {
+      const parsed = definition.config.safeParse(input.config);
+      if (!parsed.success) throw new ValidationError(fieldErrors(parsed.error));
+      section.config = parsed.data;
+    }
+    return sections;
+  });
 }
 
 export async function setSectionEnabled(
@@ -158,18 +183,10 @@ export async function setSectionEnabled(
   enabled: boolean,
   updatedBy: string,
 ) {
-  await findSection(key, sectionId);
-  const pages = await collection("pages");
-  await pages.updateOne(
-    { key, "sections.id": sectionId },
-    {
-      $set: {
-        "sections.$.enabled": enabled,
-        updatedAt: new Date(),
-        updatedBy: new ObjectId(updatedBy),
-      },
-    },
-  );
+  await mutateSections(key, updatedBy, (sections) => {
+    sections[sectionIndex(sections, sectionId)]!.enabled = enabled;
+    return sections;
+  });
 }
 
 /** `orderedIds` must contain exactly the page's section ids. */
@@ -178,25 +195,15 @@ export async function reorderSections(
   orderedIds: string[],
   updatedBy: string,
 ) {
-  const page = await getPageForAdmin(key);
-  const byId = new Map(page.sections.map((section) => [section.id, section]));
-  const isPermutation =
-    orderedIds.length === byId.size &&
-    new Set(orderedIds).size === orderedIds.length &&
-    orderedIds.every((id) => byId.has(id));
-  if (!isPermutation) {
-    throw new ValidationError({ order: ["The section list changed. Reload and try again."] });
-  }
-
-  const pages = await collection("pages");
-  await pages.updateOne(
-    { key },
-    {
-      $set: {
-        sections: orderedIds.map((id) => byId.get(id)!),
-        updatedAt: new Date(),
-        updatedBy: new ObjectId(updatedBy),
-      },
-    },
-  );
+  await mutateSections(key, updatedBy, (sections) => {
+    const byId = new Map(sections.map((section) => [section.id, section]));
+    const isPermutation =
+      orderedIds.length === byId.size &&
+      new Set(orderedIds).size === orderedIds.length &&
+      orderedIds.every((id) => byId.has(id));
+    if (!isPermutation) {
+      throw new ValidationError({ order: ["The section list changed. Reload and try again."] });
+    }
+    return orderedIds.map((id) => byId.get(id)!);
+  });
 }

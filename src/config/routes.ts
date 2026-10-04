@@ -9,6 +9,7 @@ export const routes = {
     admins: "/admin/settings/admins",
     media: "/admin/media",
     navigation: "/admin/navigation",
+    pages: "/admin/pages",
     settings: "/admin/settings",
   },
 } as const;

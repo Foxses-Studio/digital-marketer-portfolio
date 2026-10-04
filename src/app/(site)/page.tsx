@@ -1,10 +1,16 @@
-// Temporary placeholder. The homepage is built section by section from
-// CMS data; see docs/ARCHITECTURE.md.
-export default function HomePage() {
+import { getPublicPage } from "@/lib/cms/pages";
+import { getSettings } from "@/lib/cms/settings";
+import { RenderSections } from "@/sections/render-sections";
+
+/** Home page: CMS-managed sections in their saved order. */
+export default async function HomePage() {
+  const [page, site] = await Promise.all([getPublicPage("home"), getSettings("site")]);
+  const hasHero = page.sections.some((section) => section.type === "hero");
   return (
-    <div className="container-page section-space">
-      <p className="text-label text-fg-muted">Foundation ready</p>
-      <h1 className="text-h2 mt-4">Homepage sections not built yet.</h1>
-    </div>
+    <>
+      {/* The hero provides the page's H1; keep one when it's turned off. */}
+      {!hasHero && <h1 className="sr-only">{site.professionalName || site.siteName}</h1>}
+      <RenderSections sections={page.sections} />
+    </>
   );
 }

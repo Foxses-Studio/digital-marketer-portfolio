@@ -5,7 +5,7 @@
  * can't add pages or section types that aren't defined here.
  */
 export const PAGE_DEFINITIONS = {
-  home: { title: "Home", path: "/", sections: [] as string[] },
+  home: { title: "Home", path: "/", sections: ["hero"] as string[] },
   about: { title: "About", path: "/about", sections: [] as string[] },
   caseStudies: { title: "Case Studies", path: "/case-studies", sections: [] as string[] },
   blog: { title: "Blog", path: "/blog", sections: [] as string[] },

@@ -57,7 +57,10 @@ src/
   config/                  Routes, admin nav, page definitions, fonts
   db/                      Mongo client, index setup, schema (types + indexes)
   hooks/                   useActionForm, useScrollAnimation, ...
-  sections/header/         Public header (server data + client behavior)
+  sections/
+    header/                Public header (server data + client behavior)
+    hero/                  Hero: definition (schema), section, visual, motion
+    render-sections.tsx    Section type → public component
   lib/
     actions.ts             runAction(): consistent Server Action errors
     api.ts                 apiError(): consistent Route Handler errors
@@ -232,7 +235,39 @@ Controlled sections, not a page builder.
 - Shared field schemas: `src/validation/cms.ts` (`ctaSchema`,
   `linkUrlSchema`, `mediaIdSchema`).
 
-No section types are registered yet; the Hero will be the first.
+Registered section types: `hero` (on Home). Admin flow: Pages → page →
+section list (show/hide, reorder) → section editor. Each section type
+has its own structured editor (`src/components/admin/pages/`), with a
+live preview of the published page that reloads after saving.
+
+Section updates are read-modify-write on the whole `sections` array with
+an optimistic concurrency check on `updatedAt`; a concurrent save is
+rejected instead of overwritten, and a no-op is never reported as saved.
+
+### Hero
+
+Content (`src/sections/hero/definition.ts`): label, heading, highlighted
+phrase (must appear in the heading), description, primary/secondary CTA
+(enabled, label, URL), image + alt text, availability (enabled, text),
+chart caption, up to 4 channel names, up to 4 results
+(`label, prefix, value, suffix, enabled`; array order, first is featured).
+Metric values are numeric strings formatted and animated by
+`src/lib/metrics.ts`. Empty heading/label fall back to the professional
+name/title from Settings; no invented copy.
+
+Design: asymmetric editorial layout; the heading's type scale steps down
+with its length so any text holds its shape; the highlight uses the
+editorial serif (Instrument Serif italic, `--font-serif`). The visual is
+a layered composition: data plane (caption, results ledger, campaign
+curve), portrait anchor (monogram fallback), featured result in front.
+
+Markup is server-rendered (readable without JavaScript, one H1);
+`HeroMotion` adds three independent systems on separate wrappers:
+entrance (masked SplitText lines, clip reveals, curve draw, counters),
+scrubbed scroll exit (multi-rate parallax, no pinning), and pointer depth
+plus magnetic CTAs on fine-pointer desktops. Where the visual starts
+below the fold it animates when scrolled into view. Reduced motion gets
+a static hero with final values.
 
 ## Rich text
 
