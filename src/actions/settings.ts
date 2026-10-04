@@ -33,6 +33,7 @@ const SUCCESS: Record<FormSettingsGroup, string> = {
   social: "Social links saved.",
   seo: "SEO defaults saved.",
   header: "Header settings saved.",
+  footer: "Footer saved.",
 };
 
 /**
@@ -74,6 +75,10 @@ export async function saveSettingsForm(
       case "site":
         await saveSettings("site", parseInput(settingsFormSchemas.site, input));
         updateTag(cacheTags.settings("site"));
+        break;
+      case "footer":
+        await saveSettings("footer", parseInput(settingsFormSchemas.footer, input));
+        updateTag(cacheTags.settings("footer"));
         break;
       case "social":
         await saveSettings("social", parseInput(settingsFormSchemas.social, input));

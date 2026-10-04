@@ -68,8 +68,21 @@ export const heroContentSchema = z
         }
       })
       .default({ enabled: false, text: "" }),
+    /** Up to 3 short proof points under the buttons, e.g. "9 yrs" / "in paid media". */
+    facts: z
+      .array(
+        z.object({
+          id: z.uuid(),
+          value: z.string().trim().min(1, "Enter a value.").max(12, "Keep values short."),
+          label: z.string().trim().min(1, "Enter a label.").max(32, "Keep labels under 32 characters."),
+        }),
+      )
+      .max(3, "Up to 3 facts.")
+      .default([]),
     /** Small caption on the performance visual, e.g. "Campaign performance". */
     visualLabel: text(40),
+    /** Live-status line on the visual, e.g. "Scaling". Empty hides it. */
+    status: text(24),
     /**
      * The performance graph. Values are plotted in order (e.g. monthly
      * revenue); growth is calculated from the first and last value.

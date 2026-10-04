@@ -1,4 +1,6 @@
 import type { z } from "zod";
+import type { FieldGroup } from "@/lib/content/fields";
+import type { EntityType } from "@/lib/entities/registry";
 
 /**
  * A predefined, professionally designed section. The application owns the
@@ -24,6 +26,10 @@ export type SectionDefinition<
   content: Content;
   /** Presentation options the design allows (e.g. number of items). */
   config: Config;
+  /** Editor layout for the generic section editor (the Hero has its own). */
+  fields?: FieldGroup[];
+  /** Collection whose entries this section displays (managed alongside it). */
+  entity?: EntityType;
 };
 
 export type AnySectionDefinition = SectionDefinition;

@@ -2,6 +2,7 @@
 @import "./tokens.css";
 @import "./typography.css";
 @import "./feedback.css";
+@import "./motion.css";
 
 /* `dark:` variant follows the resolved theme attribute set on <html>.
    Prefer theme tokens over `dark:` overrides; use it only when a token

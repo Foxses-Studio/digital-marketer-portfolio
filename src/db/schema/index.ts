@@ -1,3 +1,4 @@
+import { entryIndexes, type EntryDocument } from "./entries";
 import { mediaIndexes, type MediaDocument } from "./media";
 import { pagesIndexes, type PageDocument } from "./pages";
 import { rateLimitsIndexes, type RateLimitDocument } from "./rate-limits";
@@ -26,6 +27,14 @@ export type Collections = {
   media: MediaDocument;
   pages: PageDocument;
   seedLedger: SeedLedgerDocument;
+  // Content collections (see src/lib/entities/registry.ts)
+  services: EntryDocument;
+  caseStudies: EntryDocument;
+  blogPosts: EntryDocument;
+  testimonials: EntryDocument;
+  experience: EntryDocument;
+  certifications: EntryDocument;
+  tools: EntryDocument;
 };
 
 export const collectionIndexes: Record<keyof Collections, CollectionIndexes> = {
@@ -36,9 +45,17 @@ export const collectionIndexes: Record<keyof Collections, CollectionIndexes> = {
   media: mediaIndexes,
   pages: pagesIndexes,
   seedLedger: seedLedgerIndexes,
+  services: entryIndexes(false),
+  caseStudies: entryIndexes(true),
+  blogPosts: entryIndexes(true),
+  testimonials: entryIndexes(false),
+  experience: entryIndexes(false),
+  certifications: entryIndexes(false),
+  tools: entryIndexes(false),
 };
 
 export type {
+  EntryDocument,
   MediaDocument,
   PageDocument,
   RateLimitDocument,

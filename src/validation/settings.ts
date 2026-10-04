@@ -155,12 +155,24 @@ const navigationSchema = headerSettingsSchema.extend({
   cta: ctaSchema.default({ enabled: true, label: "Let's work together", url: "/contact", newTab: false }),
 });
 
+// ------------------------------------------------------------------- footer
+
+const footerSchema = z.object({
+  /** Short line under the brand. */
+  description: optionalText(200),
+  /** "{year}" is replaced with the current year. Defaults to "© {year} Name". */
+  copyright: optionalText(120),
+  showNavigation: z.boolean().default(true),
+  showSocial: z.boolean().default(true),
+});
+
 export const settingsSchemas = {
   site: siteSchema,
   branding: brandingSchema,
   social: socialSchema,
   seo: seoSchema,
   navigation: navigationSchema,
+  footer: footerSchema,
 } as const;
 
 export type SettingsGroup = keyof typeof settingsSchemas;
@@ -174,5 +186,5 @@ export function isSettingsGroup(value: string): value is SettingsGroup {
 }
 
 /** Groups saved as a whole from an admin form (navigation items use their own actions). */
-export const FORM_SETTINGS_GROUPS = ["site", "branding", "social", "seo", "header"] as const;
+export const FORM_SETTINGS_GROUPS = ["site", "branding", "social", "seo", "header", "footer"] as const;
 export type FormSettingsGroup = (typeof FORM_SETTINGS_GROUPS)[number];

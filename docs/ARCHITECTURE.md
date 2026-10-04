@@ -236,10 +236,50 @@ Controlled sections, not a page builder.
 - Shared field schemas: `src/validation/cms.ts` (`ctaSchema`,
   `linkUrlSchema`, `mediaIdSchema`).
 
-Registered section types: `hero` (on Home). Admin flow: Pages → page →
-section list (show/hide, reorder) → section editor. Each section type
-has its own structured editor (`src/components/admin/pages/`), with a
-live preview of the published page that reloads after saving.
+Registered section types (all on Home, in default order): `hero`,
+`brands`, `results`, `about`, `services`, `caseStudies`, `process`,
+`tools`, `experience`, `testimonials`, `certifications`, `blog`,
+`finalCta`. Definitions live in `src/sections/defs.ts` (hero in
+`src/sections/hero/definition.ts`), public components in
+`src/sections/home/`, mapping in `src/sections/render-sections.tsx`.
+
+Admin flow: Pages → page → section list (show/hide, reorder) → section
+editor, with a live preview of the published page that reloads after
+saving. The hero has a bespoke editor; every other section declares its
+editor as field descriptors (`fields` in the definition, see
+`src/lib/content/fields.ts`) rendered by the generic `SectionEditor` /
+`FieldsEditor` (text, number, boolean, select, date, media picker, tags,
+number lists, groups, and repeatable lists with add/reorder/toggle/delete
+and SweetAlert confirmation). Sections with `entity` embed that
+collection's `EntityManager`.
+
+### Content collections
+
+`src/lib/entities/registry.ts` defines the collections (`services`,
+`caseStudies`, `blogPosts`, `testimonials`, `experience`,
+`certifications`, `tools`): Zod schema + field descriptors + admin path.
+Each is its own MongoDB collection of `EntryDocument`s (`enabled`,
+`sortOrder`, timestamps; unique sparse `slug` index where slugged).
+`src/lib/entities/service.ts` does CRUD and reorder (validation, slug
+conflicts as field errors); `getPublicEntries` is cached per collection
+tag. Actions in `src/actions/entries.ts` require `content:manage` and
+invalidate the collection tag. Section content keeps only presentation
+choices (heading, how many to show, button); entries hold the content.
+
+### Homepage motion
+
+Each section's markup is server-rendered; `SectionMotion`
+(`src/sections/motion/section-motion.tsx`) renders the `<section>` and
+attaches `useSectionMotion`: the shared intro reveal (masked heading
+lines, soft copy rise) plus that section's choreography from
+`src/sections/motion/setups.ts`. Everything runs inside
+`gsap.matchMedia` so reduced motion (also when switched mid-visit) gets
+the static layout; a CSS pre-hide with a 2.5s failsafe
+(`src/styles/motion.css`) prevents flashes before JavaScript runs.
+Pinned layouts (results, case studies) only apply from 64rem wide and
+640px tall, by setting `data-mode="pinned"`; below that the same markup
+is an editorial list/stacked cards. Interactive parts (services panel,
+testimonial slider) are small client components.
 
 Section updates are read-modify-write on the whole `sections` array with
 an optimistic concurrency check on `updatedAt`; a concurrent save is
@@ -334,7 +374,8 @@ a static hero with final values.
 `scripts/seed/` loads realistic demo content into the real collections so
 the site can be reviewed complete while it's being built. Rules:
 
-- Demo content lives in `scripts/seed/demo-content.ts` (fixed ids), one
+- Demo content lives in `scripts/seed/demo-content.ts`, `demo-home.ts`,
+  `demo-entries.ts` and `media-art.ts` (fixed ids), one
   module per area in `scripts/seed/modules/`, registered in
   `scripts/seed/index.ts`. Values are parsed with the same Zod schemas as
   the admin, so seeded and admin-saved data are identical in shape.
@@ -344,6 +385,11 @@ the site can be reviewed complete while it's being built. Rules:
   restores seeded units; `--dry-run` writes nothing.
 - Dev-only `POST /api/dev/revalidate` (404 outside `next dev` / localhost)
   lets the seed refresh cached reads in a running dev server.
+- Units: settings groups, menu items, each home section's content, each
+  collection entry (`entry:<type>:<id>`, fingerprint of content only, so
+  hiding or reordering an entry isn't an edit), each generated image.
+- Demo covers are SVG compositions rendered to WebP with `sharp`
+  (devDependency) into local media storage.
 - The dashboard shows a notice while seeded content exists.
 - Rule for every new section: add its demo content and seed module in the
   same change, so the section can be evaluated fully populated.

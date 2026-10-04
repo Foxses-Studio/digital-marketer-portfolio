@@ -15,14 +15,18 @@
  */
 import { connect } from "../env";
 import type { SeedContext, UnitStatus } from "./ledger";
-import { seedHomeHero } from "./modules/home-hero";
+import { seedEntries } from "./modules/entries";
+import { seedHomeSections } from "./modules/home-sections";
+import { seedMedia } from "./modules/media";
 import { seedNavigation } from "./modules/navigation";
 import { seedSettings } from "./modules/settings";
 
 const MODULES: Array<[string, (ctx: SeedContext) => Promise<void>]> = [
   ["Settings", seedSettings],
   ["Navigation", seedNavigation],
-  ["Home · Hero", seedHomeHero],
+  ["Media (generated demo covers)", seedMedia],
+  ["Collections", seedEntries],
+  ["Home page sections", seedHomeSections],
 ];
 
 const LABELS: Record<UnitStatus, string> = {

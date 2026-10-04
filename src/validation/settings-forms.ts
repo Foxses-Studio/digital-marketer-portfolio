@@ -56,6 +56,12 @@ const parsers: Record<FormSettingsGroup, (fd: FormData) => unknown> = {
     sticky: checked(fd, "sticky"),
     hideOnScroll: checked(fd, "hideOnScroll"),
   }),
+  footer: (fd) => ({
+    description: text(fd, "description"),
+    copyright: text(fd, "copyright"),
+    showNavigation: checked(fd, "showNavigation"),
+    showSocial: checked(fd, "showSocial"),
+  }),
 };
 
 export const settingsFormSchemas = {
@@ -64,6 +70,7 @@ export const settingsFormSchemas = {
   social: settingsSchemas.social,
   seo: settingsSchemas.seo,
   header: headerSettingsSchema,
+  footer: settingsSchemas.footer,
 } satisfies Record<FormSettingsGroup, z.ZodType>;
 
 export function parseSettingsForm(group: FormSettingsGroup, formData: FormData): unknown {

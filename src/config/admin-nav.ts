@@ -56,14 +56,14 @@ export const adminNav: AdminNavGroup[] = [
     items: [
       { href: "/admin/pages", label: "Pages", icon: Layers, permission: "content:manage", description: "Edit the content and visibility of page sections." },
       { href: "/admin/projects", label: "Projects", icon: FolderKanban, permission: "content:manage", description: "Showcase campaigns and client work.", planned: true },
-      { href: "/admin/case-studies", label: "Case Studies", icon: FileText, permission: "content:manage", description: "Long-form stories with measurable results.", planned: true },
-      { href: "/admin/blog", label: "Blog", icon: BookOpenText, permission: "content:manage", description: "Write and publish articles.", planned: true },
+      { href: "/admin/case-studies", label: "Case Studies", icon: FileText, permission: "content:manage", description: "Long-form stories with measurable results." },
+      { href: "/admin/blog", label: "Blog", icon: BookOpenText, permission: "content:manage", description: "Write and publish articles." },
       { href: "/admin/categories", label: "Categories", icon: Tags, permission: "content:manage", description: "Organize blog posts and projects.", planned: true },
-      { href: "/admin/services", label: "Services", icon: Briefcase, permission: "content:manage", description: "The services you offer.", planned: true },
-      { href: "/admin/testimonials", label: "Testimonials", icon: MessageSquareQuote, permission: "content:manage", description: "Quotes from clients and colleagues.", planned: true },
-      { href: "/admin/experience", label: "Experience", icon: History, permission: "content:manage", description: "Roles and career history.", planned: true },
-      { href: "/admin/skills", label: "Skills", icon: Wrench, permission: "content:manage", description: "Skills and marketing tools.", planned: true },
-      { href: "/admin/certifications", label: "Certifications", icon: Award, permission: "content:manage", description: "Certificates and credentials.", planned: true },
+      { href: "/admin/services", label: "Services", icon: Briefcase, permission: "content:manage", description: "The services you offer." },
+      { href: "/admin/testimonials", label: "Testimonials", icon: MessageSquareQuote, permission: "content:manage", description: "Quotes from clients and colleagues." },
+      { href: "/admin/experience", label: "Experience", icon: History, permission: "content:manage", description: "Roles and career history." },
+      { href: "/admin/tools", label: "Tools & Platforms", icon: Wrench, permission: "content:manage", description: "The platforms and tools you work with." },
+      { href: "/admin/certifications", label: "Certifications", icon: Award, permission: "content:manage", description: "Certificates and credentials." },
     ],
   },
   {
@@ -76,7 +76,7 @@ export const adminNav: AdminNavGroup[] = [
   {
     label: "Configuration",
     items: [
-      { href: "/admin/navigation", label: "Navigation", icon: PanelTop, permission: "settings:manage", description: "Header menu, call to action and header behavior." },
+      { href: "/admin/navigation", label: "Navigation", icon: PanelTop, permission: "settings:manage", description: "Header menu, call to action, header behavior and footer." },
       { href: "/admin/seo", label: "SEO", icon: Search, permission: "seo:manage", description: "Search settings for individual pages, projects and posts.", planned: true },
       { href: "/admin/settings", label: "Settings", icon: Settings, permission: "settings:manage", description: "Website details, branding and defaults." },
       { href: "/admin/settings/admins", label: "Administrators", icon: Users, permission: "admins:manage", description: "Manage who can access the admin panel." },

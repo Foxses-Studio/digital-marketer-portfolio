@@ -156,10 +156,26 @@ export async function HeroSection({ content }: { content: HeroContent }) {
                 </div>
               )}
 
+              {content.facts.length > 0 && (
+                <dl
+                  data-reveal="availability"
+                  className="mt-10 grid max-w-[34rem] grid-cols-3 gap-x-6 sm:mt-12 lg:mt-[clamp(1.75rem,5svh,2.75rem)]"
+                >
+                  {content.facts.map((fact) => (
+                    <div key={fact.id} className="flex flex-col-reverse gap-1.5">
+                      <dt className="text-small leading-snug text-fg-muted">{fact.label}</dt>
+                      <dd className="text-[clamp(1.375rem,1.1rem+0.9vw,1.875rem)] leading-none font-semibold tracking-[-0.035em] text-fg">
+                        {fact.value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+
               {availability && (
                 <p
                   data-reveal="availability"
-                  className="mt-10 flex items-center gap-3 border-t border-line pt-6 text-small text-fg-secondary sm:mt-12 lg:mt-[clamp(2rem,5.5svh,3rem)] lg:pt-[clamp(1rem,3svh,1.5rem)]"
+                  className={`flex items-center gap-3 border-t border-line pt-6 text-small text-fg-secondary lg:pt-[clamp(1rem,3svh,1.5rem)] ${content.facts.length ? "mt-7 lg:mt-[clamp(1.25rem,3svh,1.75rem)]" : "mt-10 sm:mt-12 lg:mt-[clamp(2rem,5.5svh,3rem)]"}`}
                 >
                   <span aria-hidden className="hero-status relative size-2 rounded-full bg-accent-2" />
                   {availability}
@@ -175,6 +191,7 @@ export async function HeroSection({ content }: { content: HeroContent }) {
               imageAlt={content.imageAlt || name}
               monogram={initials(name)}
               caption={content.visualLabel}
+              status={content.status}
               channels={content.channels}
               featured={featured}
               ledger={ledger}

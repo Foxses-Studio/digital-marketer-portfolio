@@ -22,7 +22,26 @@ import {
   type HeroContent,
   type HeroMetric,
 } from "@/sections/hero/definition";
+import { FieldsEditor } from "@/components/admin/content/fields-editor";
+import type { FieldDef } from "@/lib/content/fields";
 import { PreviewFrame } from "./preview-frame";
+
+const FACT_FIELDS: FieldDef[] = [
+  {
+    kind: "list",
+    name: "facts",
+    label: "Proof points",
+    max: 3,
+    itemLabel: "fact",
+    titleField: "label",
+    hint: "Up to 3 short facts under the buttons.",
+    newItem: { value: "", label: "" },
+    fields: [
+      { kind: "text", name: "value", label: "Value", max: 12, half: true, placeholder: "9 yrs" },
+      { kind: "text", name: "label", label: "Label", max: 32, half: true, placeholder: "in paid media" },
+    ],
+  },
+];
 
 type Errors = Record<string, string[]>;
 
@@ -198,6 +217,17 @@ export function HeroEditor({
             <TextField label="Image description (alt text)" value={content.imageAlt} onChange={(ev) => update("imageAlt", ev.target.value)} maxLength={160} errors={e("imageAlt")} hint="Describe the image for screen readers. Defaults to your name." />
           </FormSection>
 
+          <FormSection stacked title="Proof points" description="Quick credibility under the buttons.">
+            <FieldsEditor
+              fields={FACT_FIELDS}
+              value={content as unknown as Record<string, unknown>}
+              onChange={(next) => update("facts", (next as unknown as HeroContent).facts)}
+              errors={errors}
+              media={{}}
+              onMedia={() => {}}
+            />
+          </FormSection>
+
           <FormSection stacked title="Availability" description="A short status line under the buttons.">
             <SwitchField label="Show availability" checked={content.availability.enabled} onChange={(ev) => update("availability", { ...content.availability, enabled: ev.target.checked })} />
             <TextField label="Text" value={content.availability.text} onChange={(ev) => update("availability", { ...content.availability, text: ev.target.value })} maxLength={60} errors={e("availability.text")} placeholder="e.g. Available for new projects" />
@@ -291,6 +321,7 @@ export function HeroEditor({
           </FormSection>
 
           <FormSection stacked title="Performance visual" description="Small captions on the graph.">
+            <TextField label="Campaign status" value={content.status} onChange={(ev) => update("status", ev.target.value)} maxLength={24} errors={e("status")} placeholder="e.g. Scaling" hint="Shown with a live indicator. Leave empty to hide." />
             <TextField label="Chart caption" value={content.visualLabel} onChange={(ev) => update("visualLabel", ev.target.value)} maxLength={40} errors={e("visualLabel")} placeholder="e.g. Campaign performance" />
             <ChannelsField
               channels={content.channels}

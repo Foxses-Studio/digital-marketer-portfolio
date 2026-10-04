@@ -95,6 +95,17 @@
   padding-block: var(--section-space);
 }
 
+/* Editorial emphasis: italic serif in the accent color. */
+@utility accent-serif {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.06em;
+  letter-spacing: -0.02em;
+  color: var(--color-accent);
+  padding-right: 0.04em;
+}
+
 /* Admin panel page titles: steady size, no fluid scaling. */
 @utility text-title {
   font-family: var(--font-display);
@@ -198,4 +209,12 @@
   .rich-text img.ProseMirror-selectednode {
     outline: 2px solid var(--color-focus);
   }
+}
+
+/* SplitText line masks: room for descenders and italic overhang. */
+.reveal-line-mask {
+  padding-block: 0.06em;
+  margin-block: -0.06em;
+  padding-inline-end: 0.12em;
+  margin-inline-end: -0.12em;
 }

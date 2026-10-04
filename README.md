@@ -49,8 +49,35 @@ How it stays safe:
 - A running `npm run dev` is refreshed automatically after seeding. A
   production build (`npm run start`) needs `npm run build` again.
 
-Each new section ships with its own demo content in
-`scripts/seed/demo-content.ts` and a module in `scripts/seed/modules/`.
+What it loads: settings (general, social, SEO, footer), navigation, all 13
+homepage sections, 7 services, 4 case studies (3 featured), 5 blog posts,
+4 testimonials, 4 roles, 6 certifications, 18 tools, and 7 generated
+cover images (written to `MEDIA_LOCAL_DIR` and listed in Media). Cover
+images are re-created automatically when the database already has them
+but the files are missing on this machine.
+
+Each new section ships with its own demo content (`scripts/seed/demo-*.ts`)
+and a module in `scripts/seed/modules/`.
+
+## Homepage
+
+The homepage is built from 13 CMS sections, in this default order: Hero,
+Trusted brands, Results, About, Services, Featured case studies, Process,
+Tools & platforms, Experience, Testimonials, Certifications, Latest
+insights, Final call to action, followed by the site footer.
+
+- Admin → Pages → Home: show/hide and reorder sections, edit each one.
+  Sections that list entries (services, case studies, testimonials...)
+  embed the collection manager, so entries can be added, edited,
+  reordered, hidden and deleted in place.
+- The same collections have their own admin pages (Case Studies, Blog,
+  Services, Testimonials, Experience, Certifications, Tools & Platforms).
+- Footer: Admin → Navigation → Footer (description, copyright with
+  `{year}`, show navigation, show social links). Brand, links and contact
+  details come from Settings.
+- Case study and blog cards link to `/case-studies/<slug>` and
+  `/blog/<slug>`; those detail pages are the next step and return 404
+  until they're built.
 
 ## Scripts
 

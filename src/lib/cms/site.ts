@@ -123,3 +123,37 @@ export async function getMetadataAssets() {
       : null,
   };
 }
+
+export type FooterData = {
+  brand: Brand;
+  description: string;
+  copyright: string;
+  items: PublicNavItem[];
+  social: SocialLink[];
+  contact: { email: string | null; phone: string | null; location: string | null };
+};
+
+/** Footer content: footer settings plus the shared brand, navigation and links. */
+export async function getFooterData(): Promise<FooterData> {
+  "use cache";
+  cacheTag(cacheTags.settings("footer"), cacheTags.settings("navigation"), cacheTags.settings("social"), cacheTags.settings("site"));
+  // Revalidated daily so "{year}" rolls over on its own.
+  cacheLife("days");
+
+  const [footer, header, social, contact] = await Promise.all([
+    getSettings("footer"),
+    getHeaderData(),
+    getSocialLinks(),
+    getContactDetails(),
+  ]);
+  const year = String(new Date().getFullYear());
+  const copyright = (footer.copyright || `© {year} ${header.brand.name}`).replaceAll("{year}", year);
+  return {
+    brand: header.brand,
+    description: footer.description,
+    copyright,
+    items: footer.showNavigation ? header.items : [],
+    social: footer.showSocial ? social : [],
+    contact,
+  };
+}

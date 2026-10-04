@@ -22,6 +22,7 @@ export function HeroVisual({
   imageAlt,
   monogram,
   caption,
+  status,
   channels,
   featured,
   ledger,
@@ -31,6 +32,7 @@ export function HeroVisual({
   imageAlt: string;
   monogram: string;
   caption: string;
+  status: string;
   channels: string[];
   featured: HeroMetric | null;
   ledger: HeroMetric[];
@@ -59,7 +61,16 @@ export function HeroVisual({
     >
       {/* Data plane */}
       <div data-scroll-speed="-50" className="absolute top-[12%] right-0 h-[80%] w-[80%] sm:h-[62%] lg:top-[11%] lg:h-[64%] lg:w-[78%]">
-        <div data-depth="5" className="h-full">
+        <div data-depth="5" className="relative h-full">
+          {status && (
+            <p
+              data-reveal-fade
+              className="absolute -top-3.5 right-4 z-10 flex items-center gap-2 rounded-full border border-line bg-elevated px-3 py-1.5 text-label text-fg-secondary shadow-sm sm:right-6"
+            >
+              <span aria-hidden className="hero-status relative size-1.5 rounded-full bg-accent-2" />
+              {status}
+            </p>
+          )}
           <div
             data-reveal="plane"
             className="relative h-full overflow-hidden rounded-md border border-line bg-surface shadow-[0_1px_0_var(--color-shadow)]"

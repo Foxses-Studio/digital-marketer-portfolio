@@ -1,14 +1,16 @@
 import type { SettingsDocument } from "../../../src/db/schema";
 import { settingsSchemas, type SettingsGroup } from "../../../src/validation/settings";
 import { DEMO_IDENTITY, DEMO_SEO, DEMO_SOCIAL } from "../demo-content";
+import { DEMO_FOOTER } from "../demo-home";
 import { applyUnit, type SeedContext } from "../ledger";
 
-/** Global settings groups: General, Social, SEO. */
+/** Global settings groups: General, Social, SEO, Footer. */
 export async function seedSettings(ctx: SeedContext) {
   const groups: Array<[SettingsGroup, unknown]> = [
     ["site", DEMO_IDENTITY],
     ["social", DEMO_SOCIAL],
     ["seo", DEMO_SEO],
+    ["footer", DEMO_FOOTER],
   ];
   const settings = ctx.db.collection<SettingsDocument>("settings");
 
