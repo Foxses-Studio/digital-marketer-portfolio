@@ -1,7 +1,7 @@
 # Architecture
 
 A CMS-driven portfolio for digital marketers. One Next.js App Router project
-contains the public site, the admin panel, and all backend logic.
+contains the public site, the admin panel and all backend logic.
 
 **Core rule: the CMS controls content, the application controls design.**
 Text, images, metrics, links, SEO and section visibility/order come from
@@ -12,202 +12,248 @@ cannot be changed from the admin.
 
 ## Stack
 
-| Concern            | Choice                                   | Notes |
-| ------------------ | ---------------------------------------- | ----- |
-| Framework          | Next.js 16 (App Router), React 19, TypeScript | `cacheComponents` enabled |
-| Styling            | Tailwind CSS v4 + design tokens           | `src/styles/tokens.css` |
-| Database           | MongoDB (Atlas) + official `mongodb` driver | Typed collections in `src/db/schema` |
-| Validation         | Zod 4                                     | Shared by forms, actions, settings |
-| Auth               | Email + password, scrypt hashes, signed JWT cookie (`jose`) | Single-tenant admin |
-| Animation          | GSAP + ScrollTrigger via `@gsap/react`    | Public site only |
-| Feedback dialogs   | SweetAlert2 (lazy-loaded)                 | Never `alert()` / `confirm()` |
-| Rich text (planned)| Tiptap, stored as ProseMirror JSON        | Added with the blog/case-study step |
-| Media (planned)    | Storage driver interface: local disk in dev, S3-compatible in production | Added with the media step |
+| Concern          | Choice | Notes |
+| ---------------- | ------ | ----- |
+| Framework        | Next.js 16 (App Router), React 19, TypeScript | `cacheComponents` enabled |
+| Styling          | Tailwind CSS v4 + design tokens | `src/styles/tokens.css` |
+| Database         | MongoDB (Atlas) + official `mongodb` driver | Typed collections, `src/db/schema` |
+| Validation       | Zod 4 | Same schemas on client (UX) and server (enforcement) |
+| Auth             | Email + password, scrypt hashes, database sessions | No public registration |
+| Authorization    | Role → permission map | `src/lib/permissions` |
+| Rich text        | Tiptap 3, stored as ProseMirror JSON | Safe React renderer, no HTML strings |
+| Media            | One upload pipeline + storage driver interface | Local disk driver implemented |
+| Feedback         | SweetAlert2 (lazy-loaded) | `src/lib/feedback/alerts.ts` |
+| Icons            | lucide-react | |
+| Animation        | GSAP + ScrollTrigger | Public site only |
 
 ## Folder structure
 
 ```
-scripts/                 CLI scripts (db-setup, create-admin)
+scripts/                   CLI: db-setup, admin-recover
 src/
   app/
-    layout.tsx           Root: fonts, theme script, global metadata from settings
-    (site)/              Public website routes
-    admin/               Admin panel routes (built in the admin step)
-    api/                 Route Handlers (uploads, webhooks) when needed
-  proxy.ts               Optimistic /admin auth redirect (Next 16 "middleware")
-  actions/               Server Actions (all mutations). Each one calls requireAdmin()
-  admin/                 Admin-only components (forms, tables, media picker...)
-  animations/            GSAP registration, motion config, reusable presets
+    layout.tsx             Root: fonts, theme script, metadata from settings
+    (site)/                Public website (not built yet)
+    admin/
+      login/               Sign-in, or first-install "Create Super Admin"
+      (panel)/             Authenticated shell (sidebar, topbar)
+        dashboard/
+        media/
+        settings/admins/   Super Admin only
+        forbidden/         Access denied page
+        [module]/          Placeholder for modules not built yet
+    api/admin/media/       Upload (POST) / list (GET)
+    media/[...key]/        Serves files from the local storage driver
+  proxy.ts                 Optimistic /admin and /api/admin cookie gate
+  actions/                 Server Actions: auth, admins, media, pages, settings
   components/
-    ui/                  Small shared primitives (Button, Container...) as they are needed
-    theme/               Theme script + provider
-  config/                Fonts, route constants — app config, never content
-  db/
-    index.ts             MongoDB client + typed `collection()` helper (server-only)
-    schema/              Document type + indexes per collection, registered in schema/index.ts
-  hooks/                 Client hooks (useScrollAnimation, ...)
+    admin/                 Shell, nav, cards, empty states, admins, media
+    auth/                  Login and setup forms
+    editor/                Rich text editor + safe renderer
+    theme/                 Theme script, provider, toggle
+    ui/                    Button, fields
+  config/                  Routes, admin nav, page definitions, fonts
+  db/                      Mongo client, index setup, schema (types + indexes)
+  hooks/                   useActionForm, useScrollAnimation, ...
   lib/
-    auth/                password, token, session, dal (Data Access Layer)
-    cms/                 Cached read functions per entity + cache tags
-    feedback/            SweetAlert2 wrappers
-    seo/                 Metadata builders
-    utils/
-  sections/              Public page sections, one folder per section
-  styles/                globals, tokens, typography utilities, SweetAlert theme
-  types/                 Shared TS types (ActionResult, ...)
-  validation/            Zod schemas (per entity, settings groups, SEO fields)
+    actions.ts             runAction(): consistent Server Action errors
+    api.ts                 apiError(): consistent Route Handler errors
+    errors.ts              AppError types
+    admins/                First-install bootstrap + admin management
+    auth/                  password, session, dal (Data Access Layer)
+    cms/                   Settings, pages, section registry, cache tags
+    media/                 Upload service, type sniffing, storage drivers
+    permissions/           Roles and permissions
+    security/url.ts        URL allow-listing for links and images
+    rate-limit.ts          MongoDB-backed rate limiting
+  styles/                  Tokens, typography, rich text, SweetAlert theme
+  types/                   ActionResult
+  validation/              Zod schemas
 ```
 
 ## Data flow
 
 ```
-Admin form (client) ──> Server Action ──> requireAdmin() ──> Zod validate ──> MongoDB write ──> updateTag(tag)
-Public page (server) ──> lib/cms/* read ('use cache' + cacheTag) ──> section component ──> HTML
+Admin form ──> Zod (client) ──> Server Action ──> authorize(permission)
+          ──> Zod (server) ──> service (src/lib/*) ──> MongoDB ──> updateTag()
+Public page ──> lib/cms read ('use cache' + cacheTag) ──> section component
 ```
 
-- **Reads** for the public site live in `src/lib/cms/*`. Each is a
-  `'use cache'` function tagged with a name from `cache-tags.ts`, so public
-  pages prerender and stay static until content changes.
-- **Writes** are Server Actions in `src/actions/*`. Each one authorizes
-  with `requireAdmin()`, validates with Zod, writes, then calls
-  `updateTag()` for every affected tag so the admin sees changes
-  immediately.
-- Actions return `ActionResult` (`src/types/actions.ts`); the admin UI turns
-  that into field errors and SweetAlert2 feedback.
-- Admin pages read the session, so their session-dependent parts sit
-  inside `<Suspense>` (required by Cache Components).
-- `next build` prerenders cached CMS reads, so the build needs a reachable
-  database (on Atlas, allow the build machine's IP in Network Access).
+- Every Server Action is wrapped in `runAction()`: redirects pass through,
+  expected errors (`ValidationError`, `AuthenticationError`,
+  `AuthorizationError`, `NotFoundError`, `ConflictError`,
+  `RateLimitError`) become `{ ok: false, error, fieldErrors? }`, and
+  anything unexpected is logged on the server and returned as a generic
+  message. Stack traces and database details never reach the browser.
+- Route Handlers use `apiError()` for the same behavior as JSON.
+- Forms use `useActionForm()`: the same Zod schema validates on the client
+  for instant feedback and again on the server; failures show inline
+  field errors or a SweetAlert2 dialog.
+- Public reads are cached with `'use cache'` + tags from
+  `src/lib/cms/cache-tags.ts`; mutations call `updateTag()`.
 
-## Database conventions
+## Database
 
-- One MongoDB collection per entity. Each is declared in
-  `src/db/schema/` (TypeScript document type + indexes) and registered in
-  `src/db/schema/index.ts`; code accesses it with `await collection("name")`,
-  which is fully typed.
-- `_id` is an ObjectId (a string only where a natural key exists, such as
-  settings groups). Ids leave the data layer as hex strings, never as
-  `ObjectId` objects, so they can cross into cached and client code.
-- Every document has `createdAt` / `updatedAt` dates.
-- MongoDB doesn't enforce a schema, so **every write is validated with
-  Zod** first (`src/validation/`).
-- Collections grow **only when a feature is built**. Current: `users`,
-  `settings`.
-- After adding a collection or index: `npm run db:setup` (idempotent).
+Collections (`src/db/schema/`): `users`, `sessions`, `rateLimits`,
+`settings`, `media`, `pages`. Each file declares the document type and
+its indexes; `src/db/schema/index.ts` registers them. Indexes are created
+automatically on the first connection of each server process (and by
+`npm run db:setup`).
 
-Planned conventions for content entities (added as each is built):
+Conventions: ObjectId `_id` (string only for natural keys), ids leave the
+data layer as hex strings, every document has `createdAt`/`updatedAt`,
+every write is validated with Zod first. New collections are added only
+when their feature is built.
 
-| Field         | Purpose |
-| ------------- | ------- |
-| `status`      | `draft` \| `published` (publish/unpublish without deleting) |
-| `publishedAt` | Publish date, set on first publish |
-| `slug`        | Unique index; for projects, case studies, posts, pages |
-| `sortOrder`   | Manual ordering where order matters (services, skills, testimonials...) |
-| `seo`         | Embedded object validated by `seoFieldsSchema` (`src/validation/seo.ts`) |
-| `*MediaId`    | References to documents in the shared `media` collection |
-| `content`     | Rich text as ProseMirror JSON |
+### User
 
-### Settings
-
-Global settings are one document per group in the `settings` collection
-(`_id` is the group name), validated by Zod schemas in
-`src/validation/settings.ts`. Each schema has defaults, so the site renders
-before anything is saved. Adding a field only changes the Zod schema. Current groups: `site`, `seo`. Expected
-later: `contact`, `social`, `navigation`, `footer`.
-
-### Pages and sections (planned with the first homepage section)
-
-Controlled, not a page builder:
-
-- `pages` collection — fixed system pages (home, about, contact...) with
-  SEO fields and an embedded, ordered `sections` array. Each section has
-  `type`, `enabled` and `content`.
-- A **section registry** in code maps each `type` to its Zod content
-  schema, defaults, admin form and public component. The admin can edit
-  content, toggle visibility and reorder where allowed, but can only use
-  section types the application defines.
-- Sections that list entities (projects, testimonials...) store a heading
-  and display options; the items themselves come from their own tables.
+| Field | Notes |
+| ----- | ----- |
+| `name`, `email` | email lowercased, unique index |
+| `passwordHash` | `scrypt$N$r$p$salt$hash`, never plain text |
+| `role` | `SUPER_ADMIN` \| `ADMIN` (extensible) |
+| `status` | `ACTIVE` \| `INACTIVE` |
+| `avatarMediaId` | reference to `media` (UI later) |
+| `bootstrap` | only on the first Super Admin; unique sparse index |
+| `createdBy`, `lastLoginAt`, `createdAt`, `updatedAt` | |
 
 ## Authentication
 
-- `src/proxy.ts`: optimistic redirect for `/admin/*` based on the signed
-  cookie only (no DB).
-- `src/lib/auth/dal.ts`: `getCurrentAdmin()` / `requireAdmin()` verify the
-  session against the database. **Every admin page, Server Action and
-  Route Handler must call one of these**; the proxy is not authorization.
-- Sessions: HS256 JWT in the `dm_session` httpOnly cookie, 7-day expiry,
-  signed with `SESSION_SECRET`.
-- Passwords: scrypt (N=2^17), constant-time compare.
-- Create the first admin with `npm run admin:create`.
-- Planned with the login UI: login rate limiting.
+- **Sessions** are stored in MongoDB. The browser gets a random 32-byte
+  token in an httpOnly, SameSite=Lax cookie (`__Host-dm_session`, Secure,
+  in production); the database stores only its SHA-256 hash. Sessions last
+  7 days. Sign-out deletes the session; deactivating an account deletes all
+  of its sessions.
+- **Every request re-checks** the session and that the account is
+  `ACTIVE`, and reads the role from the database (`getCurrentAdmin()`).
+- **Proxy** (`src/proxy.ts`) only redirects requests without a session
+  cookie. It is not authorization.
+- **Pages** call `requireAdmin()` / `requirePagePermission()`;
+  **actions and routes** call `authorize(permission)`.
+- **Login** gives the same message for unknown emails and wrong passwords,
+  with equalized timing. "Deactivated" is only revealed after a correct
+  password. Rate limit: 5 failures per email+IP and 30 per IP per
+  15 minutes.
+- **CSRF**: Server Actions only accept same-origin requests (Next.js
+  Origin check); cookies are SameSite=Lax.
 
-## Design system
+### First Super Admin (first install)
 
-- **Tokens only.** Colors, radii, shadows and easings are defined once in
-  `src/styles/tokens.css`. Tailwind's default palette is removed, so
-  utilities like `bg-canvas`, `bg-surface`, `bg-elevated`, `text-fg`,
-  `text-fg-secondary`, `text-fg-muted`, `border-line`, `bg-accent`,
-  `text-accent-2`, `bg-button-primary` are the only colors available.
-- **Light and dark** are both declared per token with `light-dark()`. The
-  dark palette is designed separately (warm near-black surfaces that get
-  lighter as they elevate, re-tuned accents), not inverted.
-- **Typography** utilities in `src/styles/typography.css`: `text-display`,
-  `text-h1`, `text-h2`, `text-h3`, `text-body-lg`, `text-body`,
-  `text-small`, `text-label`, `text-button`. Sizes are fluid. Do not use
-  ad-hoc font sizes in sections.
-- **Layout** utilities: `container-page`, `section-space`.
-- Fonts: Geist (UI and headings) and Geist Mono (labels, metrics), via
-  `next/font` in `src/config/fonts.ts`.
-- Restraint: small radii, few gradients, no glassmorphism, no emojis.
+There is no registration page. `/admin/login` checks the database on every
+request:
 
-## Theme
+- **Zero accounts** → "Create Super Admin" form (name, email, password,
+  confirm). No role field.
+- **Any account** → sign-in form only.
 
-- Preference (`light` / `dark` / `system`) stored in `localStorage`.
-- `ThemeScript` (in `<head>`) sets `data-theme` and `color-scheme` on
-  `<html>` before first paint, so there is no flash.
-- `ThemeProvider` / `useTheme()` expose `preference`, `resolvedTheme` and
-  `setPreference`; they follow OS changes and sync across tabs.
-- Shared by the public site and the admin panel.
+`setupSuperAdmin` (server) re-checks that no account exists, hashes the
+password, checks again, then inserts the user with role `SUPER_ADMIN` and
+the `bootstrap` marker. The unique index on `bootstrap` makes the insert
+atomic: if simultaneous requests pass the checks, only one insert can
+succeed and the rest are rejected. Once an account exists the action
+always rejects. The new owner is signed in and redirected to the dashboard.
 
-## Animation
+### Roles and permissions
 
-- Import GSAP only from `src/animations/gsap.ts` (plugins registered there).
-- Build animations on `useScrollAnimation()` (`src/hooks`): it scopes
-  selectors, runs only when `prefers-reduced-motion` allows, and reverts
-  every tween and ScrollTrigger on unmount.
-- Shared durations, eases and staggers in `src/animations/config.ts`.
-- Reusable presets (text reveal, image reveal, counters) are added to
-  `src/animations/` the first time a section needs them.
-- Animate content that is server-rendered and visible without JS; no
-  animations in the admin panel.
+`src/lib/permissions/index.ts`:
 
-## SEO
+| Permission | SUPER_ADMIN | ADMIN |
+| ---------- | :---------: | :---: |
+| dashboard:view, content:manage, media:manage, messages:manage, seo:manage, settings:manage | yes | yes |
+| admins:manage | yes | no |
 
-- Root metadata (title template, default description, OG image,
-  `metadataBase`) is generated from the `site` and `seo` settings.
-- Entries use `buildEntryMetadata()` with their own `seo` fields, falling
-  back to the entry's title/excerpt/cover, then to global defaults.
-- Planned: `sitemap.ts`, `robots.ts`, JSON-LD for articles and the person.
+Admin management rules (enforced in `src/lib/admins/service.ts`): nobody
+can grant a role above their own, change their own role or status, or
+demote/deactivate the last active Super Admin. To add a role, add it to
+`ROLES`, `ROLE_LABELS` and `ROLE_PERMISSIONS`.
 
-## Section workflow
+## CMS: pages and sections
 
-For each section: purpose → content/data requirements → what the admin
-edits → schema/CMS changes → desktop design → mobile design → light/dark
-→ interactions/GSAP → implement → connect to admin → test responsiveness
-and themes → refine until approved.
+Controlled sections, not a page builder.
+
+- `src/config/pages.ts` lists the fixed pages and which section types
+  each uses, in default order.
+- `src/lib/cms/sections/registry.ts` maps each section `type` to a
+  definition (`defineSection`): label, Zod `content` schema (all fields
+  have defaults) and `config` schema. The public component lives in
+  `src/sections/<type>/`.
+- A `pages` document stores `sections: [{ id, type, enabled, content,
+  config }]`; array order is display order.
+- `getPublicPage(key)` (cached) returns enabled sections with validated
+  content; invalid stored data falls back to defaults.
+- `getPageForAdmin(key)` creates the page and adds newly shipped
+  sections automatically.
+- Actions: `updateSection`, `setSectionEnabled`, `reorderSections`
+  (permission `content:manage`).
+- Shared field schemas: `src/validation/cms.ts` (`ctaSchema`,
+  `linkUrlSchema`, `mediaIdSchema`).
+
+No section types are registered yet; the Hero will be the first.
+
+## Rich text
+
+- Editor: `RichTextEditor` from `@/components/editor` (lazy-loaded, never
+  in the public bundle). H1–H3, paragraph, bold, italic, underline, links,
+  bulleted/numbered lists, blockquote, images, undo/redo. Images come from
+  `onRequestImage` (URL prompt now; the media picker plugs in later).
+- Storage: ProseMirror JSON, validated by `richTextSchema`
+  (`src/validation/rich-text.ts`), an allow-list of nodes, marks and
+  safe URLs (`javascript:`, `data:` and similar are rejected).
+- Rendering: `RichTextRenderer` (`src/components/editor/rich-text-renderer.tsx`)
+  turns JSON into React elements, re-checks every URL and ignores unknown
+  nodes. No `dangerouslySetInnerHTML`. Works in Server Components.
+- Styles: `.rich-text` in `src/styles/typography.css`, shared by editor and
+  site.
+
+## Media
+
+- One pipeline: `uploadMedia()` in `src/lib/media/service.ts`, exposed at
+  `POST /api/admin/media` (permission `media:manage`).
+- Checks: size limit (`MEDIA_MAX_UPLOAD_MB`), real type from file bytes
+  (JPG, PNG, WebP, AVIF, GIF; SVG refused), dimensions read, random file
+  names.
+- Storage: `StorageDriver` interface (`src/lib/media/storage/`). The local
+  driver writes to `MEDIA_LOCAL_DIR` (outside `/public`) and serves files
+  from `/media/...` with `nosniff` and a sandbox CSP. Cloud drivers (S3,
+  R2, Cloudinary, Vercel Blob) are added as new driver files selected by
+  `MEDIA_STORAGE_DRIVER`, with credentials from env vars.
+- Features store the `media` document id and resolve it when rendering.
+
+## Design system and theme
+
+- Tokens only (`src/styles/tokens.css`), each declared with `light-dark()`;
+  Tailwind's default palette is removed. Dark mode is its own palette.
+- Typography utilities: `text-display`, `text-h1`–`text-h3`,
+  `text-body-lg`, `text-body`, `text-small`, `text-label`, `text-button`,
+  and `text-title` for admin page titles.
+- Theme: light / dark / system, stored in `localStorage`, applied by an
+  inline head script before paint (no flash), shared by site and admin.
+
+## Security checklist
+
+- Passwords: scrypt (N=2^17), 12+ chars with a letter and a number.
+- Sessions: random tokens, hashed at rest, httpOnly/SameSite cookies,
+  server-side revocation.
+- Authorization on the server for every page, action and route; roles
+  from the database only.
+- Input: Zod on every action and route; rich text and URLs allow-listed.
+- Uploads: byte sniffing, size limits, no SVG, files served with
+  `nosniff` and a sandbox CSP.
+- Headers: nosniff, Referrer-Policy, frame protection (DENY in admin),
+  Permissions-Policy, HSTS in production, `noindex` on admin.
+- Secrets only in server env vars; nothing sensitive uses `NEXT_PUBLIC_`.
+- Not yet: Content Security Policy (needs nonces for the theme script).
 
 ## Local development
 
 ```bash
-cp .env.example .env.local      # set MONGODB_URI and SESSION_SECRET
+cp .env.example .env.local      # set MONGODB_URI
 npm install
-npm run db:setup                # create collections and indexes
-ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='a-long-password' npm run admin:create
-npm run dev
+npm run db:setup                # optional: checks connection, creates indexes
+npm run dev                     # open /admin/login to create the Super Admin
 ```
 
-On MongoDB Atlas, add your IP under **Network Access**, or the connection
-times out.
+On Atlas, allow your IP under **Network Access**.
 
-Checks: `npm run typecheck`, `npm run lint`, `npm run build`.
+Checks: `npm run typecheck`, `npm run lint`, `npm run build` (the build
+reads settings from the database, so it needs a connection).

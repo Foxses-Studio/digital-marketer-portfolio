@@ -1,28 +1,33 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { routes } from "@/config/routes";
-import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth/token";
+import { SESSION_COOKIE, SESSION_TOKEN_PATTERN } from "@/lib/auth/constants";
 
 /**
- * Optimistic auth check for the admin area: redirects based on the session
- * cookie only (no database access). Real authorization happens in the Data
- * Access Layer (src/lib/auth/dal.ts).
+ * Optimistic gate for the admin area: without a well-formed session cookie,
+ * admin pages redirect to the login page and admin APIs return 401. It
+ * does no database lookups, so it is not authorization: every page, action
+ * and route verifies the session itself (src/lib/auth/dal.ts).
  */
-export async function proxy(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  const isLogin = pathname === routes.admin.login;
-  const session = await verifySessionToken(
-    request.cookies.get(SESSION_COOKIE)?.value,
-  );
+  const token = request.cookies.get(SESSION_COOKIE)?.value;
+  const hasSession = token !== undefined && SESSION_TOKEN_PATTERN.test(token);
 
-  if (!session && !isLogin) {
+  if (pathname.startsWith("/api/admin")) {
+    return hasSession
+      ? NextResponse.next()
+      : NextResponse.json({ ok: false, error: "Not signed in." }, { status: 401 });
+  }
+
+  if (pathname === routes.admin.login) return NextResponse.next();
+
+  if (!hasSession) {
     const url = new URL(routes.admin.login, request.url);
-    url.searchParams.set("next", pathname + search);
+    if (pathname !== routes.admin.root) url.searchParams.set("next", pathname + search);
     return NextResponse.redirect(url);
   }
 
-  // The login page itself redirects signed-in admins after confirming the
-  // account still exists, which avoids a redirect loop on stale cookies.
-  if (session && pathname === routes.admin.root) {
+  if (pathname === routes.admin.root) {
     return NextResponse.redirect(new URL(routes.admin.dashboard, request.url));
   }
 
@@ -30,5 +35,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin", "/admin/:path*"],
+  matcher: ["/admin", "/admin/:path*", "/api/admin/:path*"],
 };

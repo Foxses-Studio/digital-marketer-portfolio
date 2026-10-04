@@ -1,32 +1,37 @@
 import "server-only";
 import { MongoClient, type Collection, type Db } from "mongodb";
 import { env } from "@/lib/env";
+import { ensureIndexes } from "./indexes";
 import type { Collections } from "./schema";
 
 /*
  * One MongoClient (and connection pool) per server process. In development
  * it is kept on globalThis so hot reloads don't open new connections.
+ * Indexes are ensured once per process, right after connecting.
  */
 const globalForMongo = globalThis as unknown as {
-  mongoClient?: Promise<MongoClient>;
+  mongoDb?: Promise<Db>;
 };
 
-function clientPromise(): Promise<MongoClient> {
-  if (!globalForMongo.mongoClient) {
-    const client = new MongoClient(env().MONGODB_URI, {
-      appName: "digital-marketer-portfolio",
-    });
-    globalForMongo.mongoClient = client.connect().catch((error) => {
+async function connect(): Promise<Db> {
+  const { MONGODB_URI, MONGODB_DB } = env();
+  const client = await new MongoClient(MONGODB_URI, {
+    appName: "digital-marketer-portfolio",
+  }).connect();
+  const db = client.db(MONGODB_DB);
+  await ensureIndexes(db);
+  return db;
+}
+
+export function getDb(): Promise<Db> {
+  if (!globalForMongo.mongoDb) {
+    globalForMongo.mongoDb = connect().catch((error) => {
       // Allow a retry on the next request instead of caching the failure.
-      globalForMongo.mongoClient = undefined;
+      globalForMongo.mongoDb = undefined;
       throw error;
     });
   }
-  return globalForMongo.mongoClient;
-}
-
-export async function getDb(): Promise<Db> {
-  return (await clientPromise()).db(env().MONGODB_DB);
+  return globalForMongo.mongoDb;
 }
 
 /** Typed access to a collection, e.g. `await collection("users")`. */

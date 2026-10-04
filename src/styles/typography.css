@@ -86,3 +86,108 @@
 @utility section-space {
   padding-block: var(--section-space);
 }
+
+/* Admin panel page titles: steady size, no fluid scaling. */
+@utility text-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.25;
+  letter-spacing: -0.022em;
+  font-weight: 600;
+}
+
+/*
+ * Long-form rich text (blog posts, case studies, descriptions). Used by
+ * both the public renderer and the admin editor so the preview matches.
+ */
+@layer components {
+  .rich-text {
+    color: var(--color-fg-secondary);
+    font-size: 1.0625rem;
+    line-height: 1.75;
+  }
+  .rich-text > * + * {
+    margin-top: 1.25em;
+  }
+  .rich-text :is(h1, h2, h3) {
+    color: var(--color-fg);
+    font-family: var(--font-display);
+    font-weight: 600;
+    text-wrap: balance;
+  }
+  .rich-text h1 {
+    font-size: 2rem;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    margin-top: 2em;
+  }
+  .rich-text h2 {
+    font-size: 1.5rem;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    margin-top: 1.9em;
+  }
+  .rich-text h3 {
+    font-size: 1.1875rem;
+    line-height: 1.35;
+    letter-spacing: -0.012em;
+    margin-top: 1.6em;
+  }
+  .rich-text > :first-child {
+    margin-top: 0;
+  }
+  .rich-text strong {
+    color: var(--color-fg);
+    font-weight: 600;
+  }
+  .rich-text a {
+    color: var(--color-fg);
+    text-decoration: underline;
+    text-decoration-color: var(--color-accent);
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
+  }
+  .rich-text a:hover {
+    color: var(--color-accent);
+  }
+  .rich-text :is(ul, ol) {
+    padding-left: 1.4em;
+  }
+  .rich-text ul {
+    list-style: disc;
+  }
+  .rich-text ol {
+    list-style: decimal;
+  }
+  .rich-text li + li {
+    margin-top: 0.4em;
+  }
+  .rich-text li::marker {
+    color: var(--color-fg-muted);
+  }
+  .rich-text li > p + p {
+    margin-top: 0.5em;
+  }
+  .rich-text blockquote {
+    border-left: 2px solid var(--color-accent);
+    padding-left: 1.25em;
+    color: var(--color-fg);
+    font-size: 1.125em;
+  }
+  .rich-text img {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-md);
+  }
+  /* Editor-only: placeholder text for the empty first paragraph. */
+  .rich-text p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    color: var(--color-fg-muted);
+    pointer-events: none;
+  }
+  .rich-text img.ProseMirror-selectednode {
+    outline: 2px solid var(--color-focus);
+  }
+}

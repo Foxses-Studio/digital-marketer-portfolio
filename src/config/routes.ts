@@ -5,5 +5,8 @@ export const routes = {
     root: "/admin",
     login: "/admin/login",
     dashboard: "/admin/dashboard",
+    forbidden: "/admin/forbidden",
+    admins: "/admin/settings/admins",
+    media: "/admin/media",
   },
 } as const;
