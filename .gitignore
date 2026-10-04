@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local media uploads
 /storage/
+
+# Local FerretDB test database state
+/state.json
