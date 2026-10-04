@@ -1,0 +1,67 @@
+@import "tailwindcss";
+@import "./tokens.css";
+@import "./typography.css";
+@import "./feedback.css";
+@import "./motion.css";
+
+/* `dark:` variant follows the resolved theme attribute set on <html>.
+   Prefer theme tokens over `dark:` overrides; use it only when a token
+   cannot express the difference. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@layer base {
+  html {
+    background-color: var(--color-canvas);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-padding-top: var(--header-height);
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--color-canvas);
+  }
+
+  ::selection {
+    background-color: var(--color-selection);
+    color: var(--color-fg);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+
+  /* Tabular figures keep animated counters and metric tables steady. */
+  .tabular-nums,
+  [data-metric] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Header entrance on first paint: CSS, so it never flickers before hydration. */
+@keyframes header-intro {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.header-intro {
+  animation: header-intro 0.7s var(--ease-out-expo) both;
+}

@@ -1,0 +1,130 @@
+/*
+ * Design tokens — the single source of truth for color, type, spacing,
+ * radius, shadow and motion. Components must use these tokens (via the
+ * Tailwind utilities they generate) instead of raw values.
+ *
+ * Theming: every color token is declared with `light-dark()`, so one
+ * declaration carries both palettes. The active palette follows the
+ * `color-scheme` of <html>, which the theme script sets from the
+ * `data-theme` attribute (see src/components/theme). Without JavaScript
+ * the OS preference applies.
+ *
+ * The dark palette is designed separately, not inverted: it uses warm
+ * near-black surfaces that get lighter as they elevate, softened text
+ * contrast, and accent values re-tuned for dark backgrounds.
+ */
+
+@theme {
+  /* ---------------------------------------------------------------- color */
+
+  /* Remove Tailwind's default palette so only these tokens exist. */
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* Surfaces, from the page canvas up to floating layers. */
+  --color-canvas: light-dark(#f6f5f1, #0f0f10);
+  --color-surface: light-dark(#ffffff, #161618);
+  --color-surface-muted: light-dark(#efede7, #131315);
+  --color-elevated: light-dark(#ffffff, #1e1e21);
+
+  /* Foreground (text and icons). */
+  --color-fg: light-dark(#131313, #f1f0ec);
+  --color-fg-secondary: light-dark(#45443f, #b6b4ad);
+  --color-fg-muted: light-dark(#76746c, #84827b);
+  --color-fg-inverse: light-dark(#f6f5f1, #131313);
+
+  /* Lines and dividers. */
+  --color-line: light-dark(#e2dfd7, #29292d);
+  --color-line-strong: light-dark(#c9c5ba, #3d3d42);
+
+  /* Primary accent: a grounded vermilion used sparingly for emphasis,
+     links and key results. */
+  --color-accent: light-dark(#c8401f, #ff6b47);
+  --color-accent-hover: light-dark(#a93417, #ff8566);
+  --color-accent-contrast: light-dark(#ffffff, #1a0a05);
+  --color-accent-subtle: light-dark(#f8e6df, #2a1712);
+
+  /* Secondary accent: deep green for growth and positive metrics. */
+  --color-accent-2: light-dark(#1d6a50, #5cc79f);
+  --color-accent-2-subtle: light-dark(#e0efe8, #12241d);
+
+  /* Feature panel: a dark, art-directed surface used for emphasis (e.g.
+     the hero performance panel). Stays dark in both themes, a step above
+     the canvas in dark mode. */
+  --color-feature: light-dark(#151514, #1b1b1e);
+  --color-feature-fg: light-dark(#f4f2ec, #f1f0ec);
+  --color-feature-muted: light-dark(#9a978e, #8d8b84);
+
+  /* Buttons. Primary is ink-on-canvas for a restrained, editorial feel;
+     the accent is reserved for emphasis rather than every CTA. */
+  --color-button-primary: light-dark(#131313, #f1f0ec);
+  --color-button-primary-hover: light-dark(#2e2d2a, #d9d7d0);
+  --color-button-primary-fg: light-dark(#f6f5f1, #131313);
+  --color-button-secondary: transparent;
+  --color-button-secondary-hover: light-dark(#ebe8e1, #222225);
+  --color-button-secondary-fg: light-dark(#131313, #f1f0ec);
+
+  /* Interaction. */
+  --color-hover: light-dark(#ebe8e1, #1c1c1f);
+  --color-focus: light-dark(#1f4fd1, #8aa8ff);
+  --color-selection: light-dark(#f3d5ca, #4a2418);
+
+  /* Status (mostly for the admin panel and form feedback). */
+  --color-success: light-dark(#1d6a50, #5cc79f);
+  --color-warning: light-dark(#9a6200, #e7b04b);
+  --color-danger: light-dark(#b42318, #ff7a6e);
+  --color-danger-subtle: light-dark(#fbe6e4, #2b1513);
+
+  /* Shadow tint (alpha differs per theme; dark mode relies more on
+     surface lightness than on shadows to show elevation). */
+  --color-shadow: light-dark(rgb(28 25 18 / 0.08), rgb(0 0 0 / 0.45));
+
+  /* ----------------------------------------------------------- typography */
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
+
+  /* --------------------------------------------------------------- radius */
+
+  /* Deliberately small: containers stay mostly square. */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* --------------------------------------------------------------- shadow */
+
+  --shadow-sm: 0 1px 2px var(--color-shadow);
+  --shadow-md: 0 2px 4px var(--color-shadow), 0 8px 24px var(--color-shadow);
+  --shadow-lg: 0 4px 8px var(--color-shadow), 0 24px 48px var(--color-shadow);
+
+  /* --------------------------------------------------------------- motion */
+
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+:root {
+  color-scheme: light dark;
+
+  /* Layout tokens (consumed by the layout utilities in typography.css). */
+  --page-max-width: 82rem;
+  /* Header and hero use a slightly wider frame on large screens. */
+  --page-max-width-wide: 90rem;
+  --page-gutter: clamp(1.25rem, 0.75rem + 2.5vw, 3rem);
+  --section-space: clamp(4.5rem, 3rem + 6vw, 9rem);
+  --header-height: 4.75rem;
+  --header-height-compact: 4rem;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}

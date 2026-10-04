@@ -1,0 +1,225 @@
+/*
+ * Pre-hide for scroll-revealed elements in homepage sections, so they never
+ * flash in their final state before the motion layer takes over. Only when
+ * scripts run and motion is allowed; a failsafe reveals everything if
+ * JavaScript is slow or fails. Sections set data-motion="ready" when set up.
+ */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  [data-section]:not([data-motion="ready"]) :is([data-split], [data-fade], [data-hide]) {
+    visibility: hidden;
+    animation: section-failsafe 0s linear 2.5s forwards;
+  }
+}
+
+@keyframes section-failsafe {
+  to {
+    visibility: visible;
+  }
+}
+
+/* Brands marquee: soft edges; static and wrapped when it cannot move. */
+.brands-viewport {
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce), (scripting: none) {
+  .brands-viewport {
+    mask-image: none;
+  }
+  .brands-track {
+    width: 100%;
+  }
+  .brands-group {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    row-gap: 0.5rem;
+    min-width: 0;
+    padding-right: 0;
+  }
+  .brands-copy,
+  .brands-repeat {
+    display: none;
+  }
+}
+
+/* Results: editorial grid by default; a pinned stage on desktop. */
+.results-value {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(3.25rem, 2rem + 5vw, 6rem);
+  line-height: 0.9;
+  letter-spacing: -0.055em;
+}
+
+.results-stage[data-mode="pinned"] {
+  display: flex;
+  min-height: calc(100svh - var(--header-height-compact));
+  flex-direction: column;
+  justify-content: center;
+  margin-top: 0;
+  padding-block: 2.5rem;
+}
+.results-stage[data-mode="pinned"] .results-body {
+  align-items: center;
+}
+.results-stage[data-mode="pinned"] .results-slides {
+  grid-template-columns: minmax(0, 1fr);
+  border: 0;
+}
+.results-stage[data-mode="pinned"] .results-slide {
+  grid-area: 1 / 1;
+  border: 0;
+  padding: 0;
+}
+.results-stage[data-mode="pinned"] .results-value {
+  font-size: clamp(5rem, 1.5rem + 9vw, 11.5rem);
+}
+.results-stage[data-mode="pinned"] .results-note {
+  font-size: 1.125rem;
+}
+.results-stage[data-mode="pinned"] .results-index {
+  display: block;
+}
+
+/* About statement: large editorial line; words fill in with scroll. */
+.about-statement {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(1.75rem, 1.1rem + 2.4vw, 3.25rem);
+  line-height: 1.12;
+  letter-spacing: -0.032em;
+  text-wrap: pretty;
+}
+
+/* Case studies: stacked cards by default; one pinned stage on desktop. */
+.cases-stage[data-mode="pinned"] {
+  display: flex;
+  height: calc(100svh - var(--header-height-compact));
+  flex-direction: column;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 0;
+}
+.cases-stage[data-mode="pinned"] .cases-progress {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+.cases-stage[data-mode="pinned"] .cases-list {
+  gap: 0;
+}
+.cases-stage[data-mode="pinned"] .cases-item {
+  grid-area: 1 / 1;
+}
+.cases-stage[data-mode="pinned"] .cases-cover-frame {
+  aspect-ratio: auto;
+  height: min(62svh, 40rem);
+}
+
+/* Process: steps light up as the line reaches them (all lit with reduced
+   motion). */
+.process-step .process-index,
+.process-step .process-dot,
+.process-step .process-node {
+  transition: color 0.5s var(--ease-out-quart), background-color 0.5s var(--ease-out-quart),
+    border-color 0.5s var(--ease-out-quart), scale 0.5s var(--ease-out-expo);
+}
+.process-step.is-active .process-index {
+  color: var(--color-accent);
+}
+.process-step.is-active .process-node {
+  border-color: var(--color-accent);
+  scale: 1.1;
+}
+.process-step.is-active .process-dot {
+  background-color: var(--color-accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .process-step .process-index {
+    color: var(--color-accent);
+  }
+  .process-step .process-dot {
+    background-color: var(--color-accent);
+  }
+}
+
+/* Experience: the active role is emphasized once the motion layer runs. */
+.timeline-item,
+.timeline-node {
+  transition: opacity 0.6s var(--ease-out-quart), background-color 0.6s var(--ease-out-quart),
+    scale 0.6s var(--ease-out-expo);
+}
+[data-motion="ready"] .timeline-item:not(.is-active) {
+  opacity: 0.38;
+}
+.timeline-item.is-active .timeline-node {
+  background-color: var(--color-accent);
+  scale: 1.6;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-motion="ready"] .timeline-item:not(.is-active) {
+    opacity: 1;
+  }
+}
+
+/* Testimonial quote: large, calm editorial setting. */
+.testimonial-quote {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(1.5rem, 1.05rem + 1.7vw, 2.625rem);
+  line-height: 1.22;
+  letter-spacing: -0.026em;
+  text-wrap: pretty;
+}
+.testimonial-quote p::before {
+  content: "\201C";
+}
+.testimonial-quote p::after {
+  content: "\201D";
+}
+@media (min-width: 64rem) {
+  .testimonial-quote p::before,
+  .testimonial-quote p::after {
+    content: none;
+  }
+}
+
+.final-cta-heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2.75rem, 1.2rem + 6.2vw, 7.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+  text-wrap: balance;
+}
+
+.results-tab > span:nth-child(2),
+.results-tab > span:nth-child(3) {
+  transition: color 0.4s var(--ease-out-quart), opacity 0.4s var(--ease-out-quart);
+}
+.results-stage[data-mode="pinned"] .results-tab:not(.is-active) > span:nth-child(2),
+.results-stage[data-mode="pinned"] .results-tab:not(.is-active) > span:nth-child(3) {
+  opacity: 0.45;
+}
+.results-tab.is-active > span:first-child {
+  color: var(--color-accent);
+}
+
+/* Tools rows that overflow fade at both ends while they drift. */
+.tools-viewport-masked {
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+
+/* Footer: the name set huge and cropped, an editorial sign-off. */
+.footer-wordmark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(3.5rem, 13vw, 13rem);
+  line-height: 0.8;
+  letter-spacing: -0.06em;
+  white-space: nowrap;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--color-feature-fg) 9%, transparent);
+  margin-bottom: -0.08em;
+  padding-top: 1rem;
+}
