@@ -107,7 +107,8 @@
   --page-max-width: 82rem;
   --page-gutter: clamp(1.25rem, 0.75rem + 2.5vw, 3rem);
   --section-space: clamp(4.5rem, 3rem + 6vw, 9rem);
-  --header-height: 4.5rem;
+  --header-height: 4.75rem;
+  --header-height-compact: 4rem;
 }
 
 :root[data-theme="light"] {

@@ -7,7 +7,7 @@
 export const PAGE_DEFINITIONS = {
   home: { title: "Home", path: "/", sections: [] as string[] },
   about: { title: "About", path: "/about", sections: [] as string[] },
-  projects: { title: "Projects & Case Studies", path: "/projects", sections: [] as string[] },
+  caseStudies: { title: "Case Studies", path: "/case-studies", sections: [] as string[] },
   blog: { title: "Blog", path: "/blog", sections: [] as string[] },
   contact: { title: "Contact", path: "/contact", sections: [] as string[] },
 } as const;

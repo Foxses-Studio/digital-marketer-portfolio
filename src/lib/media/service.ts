@@ -123,3 +123,12 @@ export async function deleteMedia(id: string) {
     console.error("[media] could not delete file", doc.key, error);
   });
 }
+
+/** Loads media documents by id (unknown or invalid ids are skipped). */
+export async function findMediaByIds(ids: Array<string | null | undefined>) {
+  const valid = [...new Set(ids.filter((id): id is string => !!id && ObjectId.isValid(id)))];
+  if (valid.length === 0) return new Map<string, MediaItem>();
+  const media = await collection("media");
+  const docs = await media.find({ _id: { $in: valid.map((id) => new ObjectId(id)) } }).toArray();
+  return new Map(docs.map((doc) => [doc._id.toHexString(), toMediaItem(doc)]));
+}

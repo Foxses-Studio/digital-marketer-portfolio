@@ -2,9 +2,9 @@
 // CMS data; see docs/ARCHITECTURE.md.
 export default function HomePage() {
   return (
-    <main className="container-page section-space">
+    <div className="container-page section-space">
       <p className="text-label text-fg-muted">Foundation ready</p>
       <h1 className="text-h2 mt-4">Homepage sections not built yet.</h1>
-    </main>
+    </div>
   );
 }

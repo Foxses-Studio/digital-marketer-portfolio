@@ -16,11 +16,14 @@ type FormAction = (previous: ActionResult | null, formData: FormData) => Promise
 export function useActionForm<S extends z.ZodType>({
   action,
   schema,
+  toInput = (formData) => Object.fromEntries(formData),
   onSuccess,
   successMessage,
 }: {
   action: FormAction;
   schema: S;
+  /** Maps the form to the schema's input; must match the server's parser. */
+  toInput?: (formData: FormData) => unknown;
   onSuccess?: (result: ActionResult) => void | Promise<void>;
   /** Toast shown on success; set false to handle feedback yourself. */
   successMessage?: string | false;
@@ -43,7 +46,7 @@ export function useActionForm<S extends z.ZodType>({
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const parsed = schema.safeParse(Object.fromEntries(formData));
+    const parsed = schema.safeParse(toInput(formData));
     if (!parsed.success) {
       const errors: Record<string, string[]> = {};
       for (const issue of parsed.error.issues) {
@@ -51,7 +54,7 @@ export function useActionForm<S extends z.ZodType>({
       }
       setClientErrors(errors);
       const first = event.currentTarget.querySelector<HTMLElement>(
-        `[name="${parsed.error.issues[0]?.path.join(".")}"]`,
+        `[name="${CSS.escape(parsed.error.issues[0]?.path.join(".") ?? "")}"]`,
       );
       first?.focus();
       return;

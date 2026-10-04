@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { AdminsManager } from "@/components/admin/admins/admins-manager";
-import { PageHeader } from "@/components/admin/page-header";
 import { listAdmins } from "@/lib/admins/service";
 import { requirePagePermission } from "@/lib/auth/dal";
 
@@ -11,7 +10,7 @@ export default async function AdminsPage() {
   const admins = await listAdmins();
   return (
     <>
-      <PageHeader title="Administrators" description="People who can sign in to this admin panel." />
+      <p className="mb-6 text-body text-fg-secondary">People who can sign in to this admin panel.</p>
       <AdminsManager admins={admins} currentAdminId={admin.id} currentRole={admin.role} />
     </>
   );

@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 import type { SeoFields } from "@/validation/seo";
 import type { Settings } from "@/validation/settings";
 
+type MetadataAssets = {
+  favicon: { url: string; type: string } | null;
+  ogImage: { url: string; width?: number; height?: number } | null;
+};
+
 /**
  * Builds the root metadata from global settings. Page-level metadata from
  * `buildEntryMetadata` is merged on top of this by Next.js.
@@ -9,26 +14,29 @@ import type { Settings } from "@/validation/settings";
 export function buildRootMetadata(
   site: Settings<"site">,
   seo: Settings<"seo">,
+  assets: MetadataAssets,
 ): Metadata {
-  const baseUrl = site.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL;
+  const baseUrl = site.siteUrl || process.env.NEXT_PUBLIC_SITE_URL;
   const description = seo.defaultDescription || undefined;
-  const images = seo.defaultOgImage ? [seo.defaultOgImage] : undefined;
+  const images = assets.ogImage ? [assets.ogImage] : undefined;
+  const title = seo.defaultTitle || site.siteName;
 
   return {
     metadataBase: baseUrl ? new URL(baseUrl) : undefined,
     applicationName: site.siteName,
-    title: { default: seo.defaultTitle, template: seo.titleTemplate },
+    title: { default: title, template: seo.titleTemplate || "%s" },
     description,
+    icons: assets.favicon ? { icon: [{ url: assets.favicon.url, type: assets.favicon.type }] } : undefined,
     openGraph: {
       type: "website",
       siteName: site.siteName,
-      title: seo.defaultTitle,
+      title,
       description,
       images,
     },
     twitter: {
       card: images ? "summary_large_image" : "summary",
-      title: seo.defaultTitle,
+      title,
       description,
       images,
     },

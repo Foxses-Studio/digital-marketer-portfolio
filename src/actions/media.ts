@@ -1,9 +1,10 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { routes } from "@/config/routes";
 import { runAction } from "@/lib/actions";
 import { authorize } from "@/lib/auth/dal";
+import { cacheTags } from "@/lib/cms/cache-tags";
 import { deleteMedia as deleteMediaRecord, updateMediaAlt as updateAlt } from "@/lib/media/service";
 import type { ActionResult } from "@/types/actions";
 import { deleteMediaSchema, updateMediaAltSchema } from "@/validation/media";
@@ -17,6 +18,7 @@ export async function updateMediaAlt(input: unknown): Promise<ActionResult> {
     const { id, alt } = parseInput(updateMediaAltSchema, input);
     await updateAlt(id, alt);
     revalidatePath(routes.admin.media);
+    updateTag(cacheTags.media);
     return { ok: true, data: undefined, message: "Alt text saved." };
   });
 }
@@ -27,6 +29,8 @@ export async function deleteMedia(input: unknown): Promise<ActionResult> {
     const { id } = parseInput(deleteMediaSchema, input);
     await deleteMediaRecord(id);
     revalidatePath(routes.admin.media);
+    // Public pages that showed this file fall back gracefully.
+    updateTag(cacheTags.media);
     return { ok: true, data: undefined, message: "File deleted." };
   });
 }

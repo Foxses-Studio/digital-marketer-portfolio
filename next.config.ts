@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
   // `updateTag` from admin Server Actions.
   cacheComponents: true,
   poweredByHeader: false,
+  images: {
+    // Only CMS media can be optimized, and never with a query string.
+    localPatterns: [{ pathname: "/media/**", search: "" }],
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

@@ -8,5 +8,7 @@ export const routes = {
     forbidden: "/admin/forbidden",
     admins: "/admin/settings/admins",
     media: "/admin/media",
+    navigation: "/admin/navigation",
+    settings: "/admin/settings",
   },
 } as const;

@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Layers,
   MessageSquareQuote,
+  PanelTop,
   Search,
   Settings,
   Tags,
@@ -75,8 +76,9 @@ export const adminNav: AdminNavGroup[] = [
   {
     label: "Configuration",
     items: [
-      { href: "/admin/seo", label: "SEO", icon: Search, permission: "seo:manage", description: "Search and social sharing defaults.", planned: true },
-      { href: "/admin/settings", label: "Settings", icon: Settings, permission: "settings:manage", description: "Site name, contact details and social links.", planned: true },
+      { href: "/admin/navigation", label: "Navigation", icon: PanelTop, permission: "settings:manage", description: "Header menu, call to action and header behavior." },
+      { href: "/admin/seo", label: "SEO", icon: Search, permission: "seo:manage", description: "Search settings for individual pages, projects and posts.", planned: true },
+      { href: "/admin/settings", label: "Settings", icon: Settings, permission: "settings:manage", description: "Website details, branding and defaults." },
       { href: "/admin/settings/admins", label: "Administrators", icon: Users, permission: "admins:manage", description: "Manage who can access the admin panel." },
     ],
   },

@@ -52,3 +52,15 @@
     }
   }
 }
+
+/* Header entrance on first paint: CSS, so it never flickers before hydration. */
+@keyframes header-intro {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.header-intro {
+  animation: header-intro 0.7s var(--ease-out-expo) both;
+}

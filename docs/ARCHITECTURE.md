@@ -33,12 +33,14 @@ scripts/                   CLI: db-setup, admin-recover
 src/
   app/
     layout.tsx             Root: fonts, theme script, metadata from settings
-    (site)/                Public website (not built yet)
+    (site)/                Public website: layout (header) + pages
     admin/
       login/               Sign-in, or first-install "Create Super Admin"
       (panel)/             Authenticated shell (sidebar, topbar)
         dashboard/
         media/
+        navigation/        Header menu, CTA and header behavior
+        settings/          General · [tab]: branding, social, seo
         settings/admins/   Super Admin only
         forbidden/         Access denied page
         [module]/          Placeholder for modules not built yet
@@ -55,6 +57,7 @@ src/
   config/                  Routes, admin nav, page definitions, fonts
   db/                      Mongo client, index setup, schema (types + indexes)
   hooks/                   useActionForm, useScrollAnimation, ...
+  sections/header/         Public header (server data + client behavior)
   lib/
     actions.ts             runAction(): consistent Server Action errors
     api.ts                 apiError(): consistent Route Handler errors
@@ -166,6 +169,47 @@ Admin management rules (enforced in `src/lib/admins/service.ts`): nobody
 can grant a role above their own, change their own role or status, or
 demote/deactivate the last active Super Admin. To add a role, add it to
 `ROLES`, `ROLE_LABELS` and `ROLE_PERMISSIONS`.
+
+## Settings and navigation
+
+All global content lives in the `settings` collection, one document per
+group, validated by `src/validation/settings.ts` (every field has a
+default, so new fields need no migration):
+
+| Group | Admin page | Contents |
+| ----- | ---------- | -------- |
+| `site` | Settings → General | Website name, professional name/title, site URL, contact email, phone + show, location + show |
+| `branding` | Settings → Branding | Logo, dark-mode logo, favicon (media ids) |
+| `social` | Settings → Social | LinkedIn, Facebook, Instagram, X, YouTube, Behance, Dribbble, GitHub, custom link: each `{ enabled, url, label }` |
+| `seo` | Settings → SEO | Default title, title format (`%s`), description, share image |
+| `navigation` | Navigation | Menu `items[]` (`id, label, url, enabled, newTab`, array order = display order, max 8), `cta`, `sticky`, `hideOnScroll` |
+
+- Settings forms are parsed by `src/validation/settings-forms.ts` on both
+  the client and in `saveSettingsForm` (one action, group bound on the
+  client and re-checked on the server).
+- Menu items have their own actions (`src/actions/navigation.ts`):
+  create, update, show/hide, delete, reorder.
+- Images are chosen with the reusable `MediaField` (media library picker +
+  in-place upload); saving rejects ids that no longer exist.
+
+### Header data flow
+
+```
+Admin saves (Server Action) → settings collection → updateTag("settings:<group>")
+→ getHeaderData() / getBrand() ('use cache', src/lib/cms/site.ts) re-run on next request
+→ SiteHeader (server) → HeaderClient (client: scroll state, active link, mobile menu)
+```
+
+The public header ships only behavior to the browser; all content is
+fetched on the server and cached. Deleting a media file refreshes the
+`media` tag, so a removed logo falls back to the text brand.
+
+Header behavior: fixed at the top (or scrolls away when sticky is off),
+compacts with a hairline after 12px of scroll, optionally hides on scroll
+down and returns on scroll up (GSAP; never while focus is inside it),
+CSS entrance on first paint, accent underline for the active item,
+full-screen `<dialog>` mobile menu with a GSAP reveal and link stagger,
+reversed on close. Reduced motion disables the animations.
 
 ## CMS: pages and sections
 
