@@ -1,9 +1,8 @@
 "use server";
 
-import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { routes } from "@/config/routes";
-import { db, schema } from "@/db";
+import { collection } from "@/db";
 import { verifyPassword } from "@/lib/auth/password";
 import { createSession, deleteSession } from "@/lib/auth/session";
 import { actionError, type ActionResult } from "@/types/actions";
@@ -30,21 +29,18 @@ export async function login(
     return actionError("Check the highlighted fields.", fieldErrors(parsed.error));
   }
 
-  const [user] = await db
-    .select()
-    .from(schema.users)
-    .where(eq(schema.users.email, parsed.data.email))
-    .limit(1);
+  const users = await collection("users");
+  const user = await users.findOne({ email: parsed.data.email });
 
   const valid =
     user && (await verifyPassword(parsed.data.password, user.passwordHash));
   if (!valid) return actionError("Incorrect email or password.");
 
-  await db
-    .update(schema.users)
-    .set({ lastLoginAt: new Date() })
-    .where(eq(schema.users.id, user.id));
-  await createSession(user.id);
+  await users.updateOne(
+    { _id: user._id },
+    { $set: { lastLoginAt: new Date() } },
+  );
+  await createSession(user._id.toHexString());
 
   redirect(safeNext(formData.get("next")));
 }

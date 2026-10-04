@@ -1,7 +1,6 @@
 import "server-only";
-import { eq } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
-import { db, schema } from "@/db";
+import { collection } from "@/db";
 import {
   settingsSchemas,
   type Settings,
@@ -21,13 +20,13 @@ export async function getSettings<G extends SettingsGroup>(
   cacheTag(cacheTags.settings(group));
   cacheLife("max");
 
-  const [row] = await db
-    .select({ value: schema.settings.value })
-    .from(schema.settings)
-    .where(eq(schema.settings.key, group))
-    .limit(1);
+  const settings = await collection("settings");
+  const doc = await settings.findOne(
+    { _id: group },
+    { projection: { value: 1 } },
+  );
 
-  const parsed = settingsSchemas[group].safeParse(row?.value ?? {});
+  const parsed = settingsSchemas[group].safeParse(doc?.value ?? {});
   if (parsed.success) return parsed.data as Settings<G>;
 
   console.error(`Stored settings "${group}" are invalid; using defaults.`);
@@ -38,11 +37,11 @@ export async function saveSettings<G extends SettingsGroup>(
   group: G,
   value: Settings<G>,
 ) {
-  await db
-    .insert(schema.settings)
-    .values({ key: group, value })
-    .onConflictDoUpdate({
-      target: schema.settings.key,
-      set: { value, updatedAt: new Date() },
-    });
+  const settings = await collection("settings");
+  const now = new Date();
+  await settings.updateOne(
+    { _id: group },
+    { $set: { value, updatedAt: now }, $setOnInsert: { createdAt: now } },
+    { upsert: true },
+  );
 }

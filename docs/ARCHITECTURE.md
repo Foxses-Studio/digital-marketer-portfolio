@@ -16,7 +16,7 @@ cannot be changed from the admin.
 | ------------------ | ---------------------------------------- | ----- |
 | Framework          | Next.js 16 (App Router), React 19, TypeScript | `cacheComponents` enabled |
 | Styling            | Tailwind CSS v4 + design tokens           | `src/styles/tokens.css` |
-| Database           | PostgreSQL + Drizzle ORM                  | Migrations in `drizzle/` |
+| Database           | MongoDB (Atlas) + official `mongodb` driver | Typed collections in `src/db/schema` |
 | Validation         | Zod 4                                     | Shared by forms, actions, settings |
 | Auth               | Email + password, scrypt hashes, signed JWT cookie (`jose`) | Single-tenant admin |
 | Animation          | GSAP + ScrollTrigger via `@gsap/react`    | Public site only |
@@ -27,8 +27,7 @@ cannot be changed from the admin.
 ## Folder structure
 
 ```
-drizzle/                 Generated SQL migrations (commit these)
-scripts/                 One-off CLI scripts (create-admin)
+scripts/                 CLI scripts (db-setup, create-admin)
 src/
   app/
     layout.tsx           Root: fonts, theme script, global metadata from settings
@@ -44,8 +43,8 @@ src/
     theme/               Theme script + provider
   config/                Fonts, route constants — app config, never content
   db/
-    index.ts             Drizzle client (server-only)
-    schema/              One file per entity, re-exported from schema/index.ts
+    index.ts             MongoDB client + typed `collection()` helper (server-only)
+    schema/              Document type + indexes per collection, registered in schema/index.ts
   hooks/                 Client hooks (useScrollAnimation, ...)
   lib/
     auth/                password, token, session, dal (Data Access Layer)
@@ -62,7 +61,7 @@ src/
 ## Data flow
 
 ```
-Admin form (client) ──> Server Action ──> requireAdmin() ──> Zod validate ──> Drizzle write ──> updateTag(tag)
+Admin form (client) ──> Server Action ──> requireAdmin() ──> Zod validate ──> MongoDB write ──> updateTag(tag)
 Public page (server) ──> lib/cms/* read ('use cache' + cacheTag) ──> section component ──> HTML
 ```
 
@@ -78,44 +77,51 @@ Public page (server) ──> lib/cms/* read ('use cache' + cacheTag) ──> sec
 - Admin pages read the session, so their session-dependent parts sit
   inside `<Suspense>` (required by Cache Components).
 - `next build` prerenders cached CMS reads, so the build needs a reachable
-  database.
+  database (on Atlas, allow the build machine's IP in Network Access).
 
 ## Database conventions
 
-- UUID primary keys, `created_at` / `updated_at` with time zone
-  (`src/db/schema/columns.ts`).
-- Schema grows **only when a feature is built**. Current tables: `users`,
+- One MongoDB collection per entity. Each is declared in
+  `src/db/schema/` (TypeScript document type + indexes) and registered in
+  `src/db/schema/index.ts`; code accesses it with `await collection("name")`,
+  which is fully typed.
+- `_id` is an ObjectId (a string only where a natural key exists, such as
+  settings groups). Ids leave the data layer as hex strings, never as
+  `ObjectId` objects, so they can cross into cached and client code.
+- Every document has `createdAt` / `updatedAt` dates.
+- MongoDB doesn't enforce a schema, so **every write is validated with
+  Zod** first (`src/validation/`).
+- Collections grow **only when a feature is built**. Current: `users`,
   `settings`.
-- Workflow: edit `src/db/schema/*` → `npm run db:generate` →
-  review SQL → `npm run db:migrate`.
+- After adding a collection or index: `npm run db:setup` (idempotent).
 
 Planned conventions for content entities (added as each is built):
 
-| Column            | Purpose |
-| ----------------- | ------- |
-| `status`          | `draft` \| `published` (publish/unpublish without deleting) |
-| `published_at`    | Publish date, set on first publish |
-| `slug`            | Unique, URL-safe; for projects, case studies, posts, pages |
-| `sort_order`      | Manual ordering where order matters (services, skills, testimonials...) |
-| `seo`             | `jsonb` validated by `seoFieldsSchema` (`src/validation/seo.ts`) |
-| `*_media_id`      | Foreign keys to the shared `media` table |
-| `content`         | Rich text as ProseMirror JSON (`jsonb`) |
+| Field         | Purpose |
+| ------------- | ------- |
+| `status`      | `draft` \| `published` (publish/unpublish without deleting) |
+| `publishedAt` | Publish date, set on first publish |
+| `slug`        | Unique index; for projects, case studies, posts, pages |
+| `sortOrder`   | Manual ordering where order matters (services, skills, testimonials...) |
+| `seo`         | Embedded object validated by `seoFieldsSchema` (`src/validation/seo.ts`) |
+| `*MediaId`    | References to documents in the shared `media` collection |
+| `content`     | Rich text as ProseMirror JSON |
 
 ### Settings
 
-Global settings are one JSON document per group in the `settings` table,
-validated by Zod schemas in `src/validation/settings.ts`. Each schema has
-defaults, so the site renders before anything is saved. Adding a field is
-a schema change, not a migration. Current groups: `site`, `seo`. Expected
+Global settings are one document per group in the `settings` collection
+(`_id` is the group name), validated by Zod schemas in
+`src/validation/settings.ts`. Each schema has defaults, so the site renders
+before anything is saved. Adding a field only changes the Zod schema. Current groups: `site`, `seo`. Expected
 later: `contact`, `social`, `navigation`, `footer`.
 
 ### Pages and sections (planned with the first homepage section)
 
 Controlled, not a page builder:
 
-- `pages` — fixed system pages (home, about, contact...) with SEO fields.
-- `page_sections` — one row per section instance: `page_id`, `type`,
-  `enabled`, `sort_order`, `content jsonb`.
+- `pages` collection — fixed system pages (home, about, contact...) with
+  SEO fields and an embedded, ordered `sections` array. Each section has
+  `type`, `enabled` and `content`.
 - A **section registry** in code maps each `type` to its Zod content
   schema, defaults, admin form and public component. The admin can edit
   content, toggle visibility and reorder where allowed, but can only use
@@ -194,12 +200,14 @@ and themes → refine until approved.
 ## Local development
 
 ```bash
-cp .env.example .env.local      # fill in SESSION_SECRET
-docker compose up -d            # or any PostgreSQL 16
+cp .env.example .env.local      # set MONGODB_URI and SESSION_SECRET
 npm install
-npm run db:migrate
+npm run db:setup                # create collections and indexes
 ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='a-long-password' npm run admin:create
 npm run dev
 ```
+
+On MongoDB Atlas, add your IP under **Network Access**, or the connection
+times out.
 
 Checks: `npm run typecheck`, `npm run lint`, `npm run build`.

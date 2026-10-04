@@ -1,21 +1,37 @@
 import "server-only";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { MongoClient, type Collection, type Db } from "mongodb";
 import { env } from "@/lib/env";
-import * as schema from "./schema";
+import type { Collections } from "./schema";
 
-function createClient() {
-  const client = postgres(env().DATABASE_URL, { max: 10 });
-  return drizzle({ client, schema, casing: "snake_case" });
+/*
+ * One MongoClient (and connection pool) per server process. In development
+ * it is kept on globalThis so hot reloads don't open new connections.
+ */
+const globalForMongo = globalThis as unknown as {
+  mongoClient?: Promise<MongoClient>;
+};
+
+function clientPromise(): Promise<MongoClient> {
+  if (!globalForMongo.mongoClient) {
+    const client = new MongoClient(env().MONGODB_URI, {
+      appName: "digital-marketer-portfolio",
+    });
+    globalForMongo.mongoClient = client.connect().catch((error) => {
+      // Allow a retry on the next request instead of caching the failure.
+      globalForMongo.mongoClient = undefined;
+      throw error;
+    });
+  }
+  return globalForMongo.mongoClient;
 }
 
-type Database = ReturnType<typeof createClient>;
+export async function getDb(): Promise<Db> {
+  return (await clientPromise()).db(env().MONGODB_DB);
+}
 
-// Reuse one connection pool across hot reloads in development.
-const globalForDb = globalThis as unknown as { db?: Database };
-
-export const db: Database = globalForDb.db ?? createClient();
-
-if (process.env.NODE_ENV !== "production") globalForDb.db = db;
-
-export { schema };
+/** Typed access to a collection, e.g. `await collection("users")`. */
+export async function collection<Name extends keyof Collections>(
+  name: Name,
+): Promise<Collection<Collections[Name]>> {
+  return (await getDb()).collection<Collections[Name]>(name);
+}

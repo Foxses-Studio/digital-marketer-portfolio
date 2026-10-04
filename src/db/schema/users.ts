@@ -1,15 +1,17 @@
-import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
-import { id, timestamps } from "./columns";
+import type { ObjectId } from "mongodb";
+import type { CollectionIndexes } from "./types";
 
 /** Admin accounts that can sign in to the CMS. */
-export const users = pgTable("users", {
-  id: id(),
-  email: text("email").notNull().unique(),
-  name: text("name").notNull(),
-  passwordHash: text("password_hash").notNull(),
-  lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
-  ...timestamps(),
-});
+export type UserDocument = {
+  _id: ObjectId;
+  email: string;
+  name: string;
+  passwordHash: string;
+  lastLoginAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
+export const usersIndexes: CollectionIndexes = [
+  { key: { email: 1 }, unique: true },
+];

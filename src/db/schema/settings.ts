@@ -1,14 +1,15 @@
-import { jsonb, pgTable, text } from "drizzle-orm/pg-core";
-import { timestamps } from "./columns";
+import type { CollectionIndexes } from "./types";
 
 /**
- * Global site settings stored as one JSON document per group ("site",
- * "seo", later "contact", "social", ...). The shape of each group is
- * defined and validated by Zod in src/validation/settings.ts, so new
- * fields can be added without a database migration.
+ * Global site settings stored as one document per group ("site", "seo",
+ * later "contact", "social", ...), keyed by the group name. The shape of
+ * `value` is defined and validated by Zod in src/validation/settings.ts.
  */
-export const settings = pgTable("settings", {
-  key: text("key").primaryKey(),
-  value: jsonb("value").notNull(),
-  ...timestamps(),
-});
+export type SettingsDocument = {
+  _id: string;
+  value: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export const settingsIndexes: CollectionIndexes = [];

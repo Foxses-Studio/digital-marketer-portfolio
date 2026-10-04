@@ -1,9 +1,9 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { ObjectId } from "mongodb";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { routes } from "@/config/routes";
-import { db, schema } from "@/db";
+import { collection } from "@/db";
 import { readSession } from "./session";
 
 /**
@@ -19,17 +19,17 @@ export const getCurrentAdmin = cache(async (): Promise<CurrentAdmin | null> => {
   const session = await readSession();
   if (!session) return null;
 
-  const [user] = await db
-    .select({
-      id: schema.users.id,
-      name: schema.users.name,
-      email: schema.users.email,
-    })
-    .from(schema.users)
-    .where(eq(schema.users.id, session.userId))
-    .limit(1);
+  if (!ObjectId.isValid(session.userId)) return null;
 
-  return user ?? null;
+  const users = await collection("users");
+  const user = await users.findOne(
+    { _id: new ObjectId(session.userId) },
+    { projection: { name: 1, email: 1 } },
+  );
+
+  return user
+    ? { id: user._id.toHexString(), name: user.name, email: user.email }
+    : null;
 });
 
 /** Returns the signed-in admin or redirects to the login page. */

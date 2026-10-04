@@ -11,10 +11,9 @@ structure, data flow and conventions.
 ## Getting started
 
 ```bash
-cp .env.example .env.local      # set SESSION_SECRET (openssl rand -base64 48)
-docker compose up -d            # local PostgreSQL
+cp .env.example .env.local      # set MONGODB_URI and SESSION_SECRET
 npm install
-npm run db:migrate
+npm run db:setup
 ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='a-long-password' npm run admin:create
 npm run dev
 ```
@@ -27,7 +26,5 @@ npm run dev
 | `npm run build`        | Production build (needs the database) |
 | `npm run typecheck`    | Generate route types and run `tsc` |
 | `npm run lint`         | ESLint |
-| `npm run db:generate`  | Generate a migration from schema changes |
-| `npm run db:migrate`   | Apply migrations |
-| `npm run db:studio`    | Browse the database |
+| `npm run db:setup`     | Create MongoDB collections and indexes |
 | `npm run admin:create` | Create or reset an admin account |
